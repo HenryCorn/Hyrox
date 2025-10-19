@@ -19,21 +19,24 @@ class ActiveWorkoutScreen extends StatefulWidget {
 class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
   bool _isRunning = false;
   int _currentExerciseIndex = 0;
-  int _currentTime = 0;
-  int _totalElapsedTime = 0;
+  int _exerciseStartTime = 0;
+  final Stopwatch _stopwatch = Stopwatch();
   late Timer _timer;
+
+  int get _exerciseElapsedTime => _stopwatch.elapsed.inSeconds - _exerciseStartTime;
+  int get _totalElapsedTime => _stopwatch.elapsed.inSeconds;
 
   @override
   void initState() {
     super.initState();
     _keepScreenOn();
-    _currentTime = widget.routine.exercises[0].duration;
     _initializeTimer();
   }
 
   @override
   void dispose() {
     _timer.cancel();
+    _stopwatch.stop();
     ScreenBrightness().resetScreenBrightness();
     super.dispose();
   }
@@ -47,34 +50,45 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
   }
 
   void _initializeTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    _timer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
       if (_isRunning) {
         setState(() {
-          if (_currentTime > 0) {
-            _currentTime--;
-            _totalElapsedTime++;
-          } else {
-            if (_currentExerciseIndex < widget.routine.exercises.length - 1) {
-              _moveToNextExercise();
-            } else {
-              _completeWorkout();
-            }
-          }
+          // Update UI more frequently for smoother display
         });
       }
     });
   }
 
   void _moveToNextExercise() {
+    if (_currentExerciseIndex < widget.routine.exercises.length - 1) {
+      setState(() {
+        _currentExerciseIndex++;
+        _exerciseStartTime = _stopwatch.elapsed.inSeconds;
+      });
+    } else {
+      _completeWorkout();
+    }
+  }
+
+  void _toggleTimer() {
     setState(() {
-      _currentExerciseIndex++;
-      _currentTime = widget.routine.exercises[_currentExerciseIndex].duration;
+      _isRunning = !_isRunning;
+      if (_isRunning) {
+        if (_stopwatch.elapsed.inSeconds == 0) {
+          // First start
+          _exerciseStartTime = 0;
+        }
+        _stopwatch.start();
+      } else {
+        _stopwatch.stop();
+      }
     });
   }
 
   void _completeWorkout() {
-    _timer.cancel();
+    _stopwatch.stop();
     _isRunning = false;
+    _timer.cancel();
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -84,7 +98,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
         title: const Text('Workout Complete!'),
         contentTextStyle: const TextStyle(color: WorkoutTheme.textWhite),
         content: Text(
-          'Total time: ${(_totalElapsedTime / 60).floor()}:${(_totalElapsedTime % 60).toString().padLeft(2, '0')}',
+          'Total time: ${_formatTime(_totalElapsedTime)}',
         ),
         actions: [
           TextButton(
@@ -103,9 +117,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
   void _restartWorkout() {
     setState(() {
       _currentExerciseIndex = 0;
-      _currentTime = widget.routine.exercises[0].duration;
-      _totalElapsedTime = 0;
+      _exerciseStartTime = 0;
       _isRunning = false;
+      _stopwatch.reset();
     });
   }
 
@@ -121,6 +135,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
       _currentExerciseIndex < widget.routine.exercises.length - 1
           ? widget.routine.exercises[_currentExerciseIndex + 1]
           : null;
+
+  String _formatTime(int seconds) {
+    final minutes = (seconds / 60).floor();
+    final remainingSeconds = seconds % 60;
+    return '${minutes.toString()}:${remainingSeconds.toString().padLeft(2, '0')}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -159,7 +179,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
           ),
           const Spacer(),
           Text(
-            '${(_totalElapsedTime / 60).floor()}:${(_totalElapsedTime % 60).toString().padLeft(2, '0')}',
+            _formatTime(_totalElapsedTime),
             style: WorkoutTheme.totalTimerTextStyle,
           ),
         ],
@@ -196,9 +216,21 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
   }
 
   Widget _buildTimer() {
-    return Text(
-      '${(_currentTime / 60).floor()}:${(_currentTime % 60).toString().padLeft(2, '0')}',
-      style: WorkoutTheme.timerTextStyle,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          _formatTime(_exerciseElapsedTime),
+          style: WorkoutTheme.timerTextStyle,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Exercise Time',
+          style: WorkoutTheme.exerciseNameStyle.copyWith(
+            fontSize: 16,
+          ),
+        ),
+      ],
     );
   }
 
@@ -251,11 +283,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
               color: WorkoutTheme.primaryYellow,
             ),
             iconSize: 48,
-            onPressed: () {
-              setState(() {
-                _isRunning = !_isRunning;
-              });
-            },
+            onPressed: _toggleTimer,
           ),
           IconButton(
             icon: const Icon(Icons.skip_next, color: WorkoutTheme.primaryYellow),
@@ -267,10 +295,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                       builder: (context) => AlertDialog(
                         backgroundColor: WorkoutTheme.surfaceBlack,
                         titleTextStyle: const TextStyle(color: WorkoutTheme.primaryYellow),
-                        title: const Text('Skip Exercise?'),
+                        title: const Text('Move to Next Exercise?'),
                         contentTextStyle: const TextStyle(color: WorkoutTheme.textWhite),
                         content: const Text(
-                          'Are you sure you want to skip to the next exercise?',
+                          'Ready to move on to the next exercise?',
                         ),
                         actions: [
                           TextButton(
@@ -278,7 +306,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                               foregroundColor: WorkoutTheme.textGrey,
                             ),
                             onPressed: () => Navigator.pop(context),
-                            child: const Text('Cancel'),
+                            child: const Text('Stay Here'),
                           ),
                           TextButton(
                             style: TextButton.styleFrom(
@@ -288,7 +316,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                               Navigator.pop(context);
                               _moveToNextExercise();
                             },
-                            child: const Text('Skip'),
+                            child: const Text('Next Exercise'),
                           ),
                         ],
                       ),

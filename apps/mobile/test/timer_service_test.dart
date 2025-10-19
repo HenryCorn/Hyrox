@@ -1,24 +1,28 @@
-import 'package:test/test.dart';
-import '../lib/models/exercise.dart';
-import '../lib/models/routine.dart';
-import '../lib/services/timer_service.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:hyrox_tracker/models/exercise.dart';
+import 'package:hyrox_tracker/models/routine.dart';
+import 'package:hyrox_tracker/services/timer_service.dart';
 
 void main() {
   group('TimerService', () {
     test('should accumulate durations across exercises', () async {
-      final routine = Routine('Test', [
-        Exercise('ex1', ''),
-        Exercise('ex2', ''),
-        Exercise('ex3', ''),
-      ]);
+      final routine = Routine(
+        name: 'Test',
+        exercises: const [
+          Exercise(name: 'ex1', description: ''),
+          Exercise(name: 'ex2', description: ''),
+          Exercise(name: 'ex3', description: ''),
+        ],
+      );
       final service = TimerService(routine);
       service.start();
-      // wait a bit, then go to next exercise
-      await Future.delayed(Duration(milliseconds: 20));
+      // Exercise 1: wait 20ms
+      await Future.delayed(const Duration(milliseconds: 20));
       service.nextExercise();
-      await Future.delayed(Duration(milliseconds: 30));
-      service.nextExercise();
-      await Future.delayed(Duration(milliseconds: 40));
+      // Exercise 2: wait 30ms
+      await Future.delayed(const Duration(milliseconds: 30));
+      // Stop without going to exercise 3
       service.stop();
 
       // expect there are two durations recorded (last exercise not yet ended)
@@ -32,21 +36,24 @@ void main() {
     });
 
     test('should pause and resume properly', () async {
-      final routine = Routine('Test', [
-        Exercise('ex1', ''),
-        Exercise('ex2', ''),
-      ]);
+      final routine = Routine(
+        name: 'Test',
+        exercises: const [
+          Exercise(name: 'ex1', description: ''),
+          Exercise(name: 'ex2', description: ''),
+        ],
+      );
       final service = TimerService(routine);
       service.start();
-      await Future.delayed(Duration(milliseconds: 20));
+      await Future.delayed(const Duration(milliseconds: 20));
       service.pause();
       final elapsedPaused = service.currentExerciseElapsed;
-      await Future.delayed(Duration(milliseconds: 20));
+      await Future.delayed(const Duration(milliseconds: 20));
       // While paused, elapsed time shouldn't change significantly
       expect(service.currentExerciseElapsed.inMilliseconds,
           closeTo(elapsedPaused.inMilliseconds, 5));
       service.resume();
-      await Future.delayed(Duration(milliseconds: 20));
+      await Future.delayed(const Duration(milliseconds: 20));
       expect(service.currentExerciseElapsed > elapsedPaused, isTrue);
       service.stop();
       service.dispose();

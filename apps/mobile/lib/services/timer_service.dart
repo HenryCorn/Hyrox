@@ -2,7 +2,7 @@ import 'dart:async';
 
 import '../models/routine.dart';
 
-/// A service that manages a workout routine and tracks per exercise and total durations.
+/// A service that manages timing a workout routine and tracks per exercise and total durations.
 /// It supports starting, pausing, resuming, moving to the next exercise, and resetting.
 /// The service uses [Stopwatch] internally to avoid relying on `DateTime` and can notify listeners
 /// through a broadcast stream on every tick.
@@ -15,15 +15,16 @@ class TimerService {
     _totalStopwatch = Stopwatch();
   }
 
+  /// The routine being timed.
   final Routine routine;
 
-  // Index of the current exercise.
+  /// Index of the current exercise.
   int _currentIndex = 0;
 
-  // Whether the timer has been started.
+  /// Whether the timer has been started.
   bool _isRunning = false;
 
-  // Whether the timer is currently paused.
+  /// Whether the timer is currently paused.
   bool _isPaused = false;
 
   late Stopwatch _exerciseStopwatch;
@@ -55,10 +56,10 @@ class TimerService {
   /// Elapsed time for the current exercise.
   Duration get currentExerciseElapsed => _exerciseStopwatch.elapsed;
 
-  /// Elapsed time for the entire workout.
+  /// Elapsed time since the workout started.
   Duration get totalElapsed => _totalStopwatch.elapsed;
 
-  /// Starts the timer. Does nothing if already running.
+  /// Starts timing the routine. Does nothing if already running.
   void start() {
     if (_isRunning) return;
     _isRunning = true;
@@ -104,15 +105,18 @@ class TimerService {
   void nextExercise() {
     if (!_isRunning) return;
     // Record the duration for the current exercise.
+    _exerciseStopwatch.stop();
     _exerciseDurations.add(_exerciseStopwatch.elapsed);
     _currentIndex++;
+    
     if (_currentIndex >= routine.exercises.length) {
       stop();
       return;
     }
-    // Start timing the next exercise.
+    
+    // Only start timing next exercise if we haven't reached the end
     _exerciseStopwatch = Stopwatch()..start();
-    // Restart ticker for new exercise.
+    // Restart ticker for the new exercise.
     _startTicker();
   }
 
@@ -122,8 +126,9 @@ class TimerService {
     _isRunning = false;
     _isPaused = false;
     _timer?.cancel();
-    // Record last exercise if not already added.
-    if (_exerciseStopwatch.isRunning || _exerciseDurations.length < routine.exercises.length) {
+    // Only record the last exercise if we haven't recorded all exercises yet
+    if (_exerciseDurations.length < routine.exercises.length) {
+      _exerciseStopwatch.stop();
       _exerciseDurations.add(_exerciseStopwatch.elapsed);
     }
     _totalStopwatch.stop();
@@ -136,12 +141,12 @@ class TimerService {
     _timer?.cancel();
     _exerciseStopwatch.stop();
     _totalStopwatch.stop();
+    _exerciseDurations.clear();
     _currentIndex = 0;
     _isRunning = false;
     _isPaused = false;
     _exerciseStopwatch = Stopwatch();
     _totalStopwatch = Stopwatch();
-    _exerciseDurations.clear();
   }
 
   /// Disposes resources such as the tick stream.

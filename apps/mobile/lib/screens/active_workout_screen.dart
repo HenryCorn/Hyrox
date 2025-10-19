@@ -204,12 +204,30 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
             fontSize: 32,
           ),
         ),
+        if (currentExercise.weightNote != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            currentExercise.weightNote!,
+            style: WorkoutTheme.exerciseNameStyle.copyWith(
+              color: WorkoutTheme.primaryYellow,
+              fontSize: 18,
+            ),
+          ),
+        ],
         if (nextExercise != null) ...[
           const SizedBox(height: 16),
           Text(
             'Next: ${nextExercise!.name}',
             style: WorkoutTheme.exerciseNameStyle,
           ),
+          if (nextExercise!.weightNote != null)
+            Text(
+              nextExercise!.weightNote!,
+              style: WorkoutTheme.exerciseNameStyle.copyWith(
+                fontSize: 14,
+                color: WorkoutTheme.textGrey,
+              ),
+            ),
         ],
       ],
     );

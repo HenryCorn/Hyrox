@@ -18,10 +18,14 @@ class Exercise {
   final String name;
   final int duration; // in seconds
   final String? description;
+  final double? weight; // in kg
+  final String? weightNote;
 
   Exercise({
     required this.name,
     required this.duration,
     this.description,
+    this.weight,
+    this.weightNote,
   });
 }

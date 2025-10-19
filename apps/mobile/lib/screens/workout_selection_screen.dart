@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/hyrox_workouts.dart';
+import '../theme/workout_theme.dart';
 import 'active_workout_screen.dart';
 
 class WorkoutSelectionScreen extends StatelessWidget {
@@ -8,10 +9,19 @@ class WorkoutSelectionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: WorkoutTheme.backgroundBlack,
       appBar: AppBar(
-        title: const Text('HYROX Workout'),
+        backgroundColor: WorkoutTheme.surfaceBlack,
+        title: const Text(
+          'HYROX Workout',
+          style: TextStyle(
+            color: WorkoutTheme.primaryYellow,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
       body: ListView(
+        padding: const EdgeInsets.symmetric(vertical: 16.0),
         children: [
           _buildCategoryCard(
             context,
@@ -55,14 +65,16 @@ class WorkoutSelectionScreen extends StatelessWidget {
     HyroxCategory category,
   ) {
     return Card(
-      margin: const EdgeInsets.all(8.0),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16.0),
-        title: Text(
-          title,
-          style: Theme.of(context).textTheme.titleLarge,
+      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      color: WorkoutTheme.surfaceBlack,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12.0),
+        side: const BorderSide(
+          color: WorkoutTheme.primaryYellow,
+          width: 1.0,
         ),
-        subtitle: Text(description),
+      ),
+      child: InkWell(
         onTap: () {
           final workout = HyroxWorkout.getWorkout(category);
           Navigator.of(context).push(
@@ -71,6 +83,30 @@ class WorkoutSelectionScreen extends StatelessWidget {
             ),
           );
         },
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: WorkoutTheme.primaryYellow,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                description,
+                style: const TextStyle(
+                  color: WorkoutTheme.textWhite,
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

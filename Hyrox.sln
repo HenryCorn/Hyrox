@@ -8,6 +8,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "api", "api", "{EDCCA0DF-5DC
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hyrox.Api", "services\api\Hyrox.Api\Hyrox.Api.csproj", "{3FA8F54B-6F9C-1ECA-6B67-2CC3956E958C}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{FA90E79C-5523-49F1-BC25-0C19FF1AC63E}"
+	ProjectSection(SolutionItems) = preProject
+		build\build.cake = build\build.cake
+		build\tools\packages.config = build\tools\packages.config
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

@@ -149,3 +149,5 @@
 /Users/quique/repo/Hyrox/services/api/Hyrox.Api/obj/Debug/net9.0/Hyrox.Api.pdb
 /Users/quique/repo/Hyrox/services/api/Hyrox.Api/obj/Debug/net9.0/Hyrox.Api.genruntimeconfig.cache
 /Users/quique/repo/Hyrox/services/api/Hyrox.Api/obj/Debug/net9.0/ref/Hyrox.Api.dll
+/Users/quique/repo/Hyrox/services/api/Hyrox.Api/bin/Debug/net9.0/artifacts/swagger.json
+/Users/quique/repo/Hyrox/services/api/Hyrox.Api/bin/Debug/net9.0/OpenTelemetry.Instrumentation.EntityFrameworkCore.dll

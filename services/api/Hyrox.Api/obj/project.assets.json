@@ -983,6 +983,23 @@
           "Microsoft.AspNetCore.App"
         ]
       },
+      "OpenTelemetry.Instrumentation.EntityFrameworkCore/1.0.0-beta.12": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.Extensions.Options": "8.0.0",
+          "OpenTelemetry.Api.ProviderBuilderExtensions": "[1.9.0, 2.0.0)"
+        },
+        "compile": {
+          "lib/netstandard2.0/OpenTelemetry.Instrumentation.EntityFrameworkCore.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/netstandard2.0/OpenTelemetry.Instrumentation.EntityFrameworkCore.dll": {
+            "related": ".xml"
+          }
+        }
+      },
       "OpenTelemetry.Instrumentation.Http/1.12.0": {
         "type": "package",
         "dependencies": {
@@ -3621,6 +3638,20 @@
         "opentelemetry.instrumentation.aspnetcore.nuspec"
       ]
     },
+    "OpenTelemetry.Instrumentation.EntityFrameworkCore/1.0.0-beta.12": {
+      "sha512": "L/wZDi3MXyL2OsaxykjNovTgNhGq0kVtWNcCoqzOctxYMnCUGAQHYA9XwZGpad1vnnFxHOcN3oW4qFAQuYpKUA==",
+      "type": "package",
+      "path": "opentelemetry.instrumentation.entityframeworkcore/1.0.0-beta.12",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/netstandard2.0/OpenTelemetry.Instrumentation.EntityFrameworkCore.dll",
+        "lib/netstandard2.0/OpenTelemetry.Instrumentation.EntityFrameworkCore.xml",
+        "opentelemetry-icon-color.png",
+        "opentelemetry.instrumentation.entityframeworkcore.1.0.0-beta.12.nupkg.sha512",
+        "opentelemetry.instrumentation.entityframeworkcore.nuspec"
+      ]
+    },
     "OpenTelemetry.Instrumentation.Http/1.12.0": {
       "sha512": "0rW+MbHgUQAdbvBtRxPYoQBosbNdWegL7cYkRlxq+KQ/VFyU8itt4pWTccmu1/FWmTgqJyT3LaujyDZoRrm8Yg==",
       "type": "package",
@@ -4345,8 +4376,10 @@
       "OpenTelemetry.Exporter.OpenTelemetryProtocol >= 1.13.1",
       "OpenTelemetry.Extensions.Hosting >= 1.13.1",
       "OpenTelemetry.Instrumentation.AspNetCore >= 1.12.0",
+      "OpenTelemetry.Instrumentation.EntityFrameworkCore >= 1.0.0-beta.12",
       "OpenTelemetry.Instrumentation.Http >= 1.12.0",
       "Serilog.AspNetCore >= 9.0.0",
+      "Serilog.Formatting.Compact >= 3.0.0",
       "Serilog.Sinks.Console >= 6.0.0",
       "Swashbuckle.AspNetCore >= 9.0.6"
     ]
@@ -4424,6 +4457,10 @@
             "target": "Package",
             "version": "[1.12.0, )"
           },
+          "OpenTelemetry.Instrumentation.EntityFrameworkCore": {
+            "target": "Package",
+            "version": "[1.0.0-beta.12, )"
+          },
           "OpenTelemetry.Instrumentation.Http": {
             "target": "Package",
             "version": "[1.12.0, )"
@@ -4431,6 +4468,10 @@
           "Serilog.AspNetCore": {
             "target": "Package",
             "version": "[9.0.0, )"
+          },
+          "Serilog.Formatting.Compact": {
+            "target": "Package",
+            "version": "[3.0.0, )"
           },
           "Serilog.Sinks.Console": {
             "target": "Package",

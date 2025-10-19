@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "0gEGb9wUwE0=",
+  "dgSpecHash": "zAIZb8EIoOg=",
   "success": true,
   "projectFilePath": "/Users/quique/repo/Hyrox/services/api/Hyrox.Api/Hyrox.Api.csproj",
   "expectedPackageFiles": [
@@ -48,6 +48,7 @@
     "/Users/quique/.nuget/packages/opentelemetry.exporter.opentelemetryprotocol/1.13.1/opentelemetry.exporter.opentelemetryprotocol.1.13.1.nupkg.sha512",
     "/Users/quique/.nuget/packages/opentelemetry.extensions.hosting/1.13.1/opentelemetry.extensions.hosting.1.13.1.nupkg.sha512",
     "/Users/quique/.nuget/packages/opentelemetry.instrumentation.aspnetcore/1.12.0/opentelemetry.instrumentation.aspnetcore.1.12.0.nupkg.sha512",
+    "/Users/quique/.nuget/packages/opentelemetry.instrumentation.entityframeworkcore/1.0.0-beta.12/opentelemetry.instrumentation.entityframeworkcore.1.0.0-beta.12.nupkg.sha512",
     "/Users/quique/.nuget/packages/opentelemetry.instrumentation.http/1.12.0/opentelemetry.instrumentation.http.1.12.0.nupkg.sha512",
     "/Users/quique/.nuget/packages/serilog/4.2.0/serilog.4.2.0.nupkg.sha512",
     "/Users/quique/.nuget/packages/serilog.aspnetcore/9.0.0/serilog.aspnetcore.9.0.0.nupkg.sha512",

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Hyrox.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f87361726429c69523acdd3583596c1da8348744")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+667c60e5b182eb5128621319d808ce0178368d31")]
 [assembly: System.Reflection.AssemblyProductAttribute("Hyrox.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Hyrox.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

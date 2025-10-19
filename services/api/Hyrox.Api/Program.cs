@@ -2,9 +2,6 @@ using Hyrox.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Events;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
-using OpenTelemetry.Metrics;
 
 // Configure Serilog before building the application
 Log.Logger = new LoggerConfiguration()
@@ -25,61 +22,31 @@ try
     // Replace default logging with Serilog
     builder.Host.UseSerilog();
 
+    // Add Aspire service defaults (OpenTelemetry, health checks, service discovery, resilience)
+    builder.AddServiceDefaults();
+
     // Add services
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
-    builder.Services.AddHealthChecks();
     builder.Services.AddOpenApi();
 
     // Add correlation ID support
     builder.Services.AddHttpContextAccessor();
 
-    // Add OpenTelemetry
-    var serviceName = "Hyrox.Api";
-    var serviceVersion = "1.0.0";
-
-    builder.Services.AddOpenTelemetry()
-        .ConfigureResource(resource => resource
-            .AddService(serviceName: serviceName, serviceVersion: serviceVersion))
-        .WithTracing(tracing => tracing
-            .AddAspNetCoreInstrumentation(options =>
-            {
-                options.RecordException = true;
-                options.EnrichWithHttpRequest = (activity, httpRequest) =>
-                {
-                    activity.SetTag("http.request.client_ip", httpRequest.HttpContext.Connection.RemoteIpAddress?.ToString());
-                };
-                options.EnrichWithHttpResponse = (activity, httpResponse) =>
-                {
-                    activity.SetTag("http.response.status_code", httpResponse.StatusCode);
-                };
-            })
-            .AddHttpClientInstrumentation()
-            .AddEntityFrameworkCoreInstrumentation(options =>
-            {
-                options.SetDbStatementForText = true;
-                options.EnrichWithIDbCommand = (activity, command) =>
-                {
-                    activity.SetTag("db.connection_id", command.Connection?.GetHashCode());
-                };
-            })
-            .AddOtlpExporter(options =>
-            {
-                options.Endpoint = new Uri(builder.Configuration["OpenTelemetry:Endpoint"] ?? "http://localhost:4317");
-            }))
-        .WithMetrics(metrics => metrics
-            .AddAspNetCoreInstrumentation()
-            .AddHttpClientInstrumentation()
-            .AddOtlpExporter(options =>
-            {
-                options.Endpoint = new Uri(builder.Configuration["OpenTelemetry:Endpoint"] ?? "http://localhost:4317");
-            }));
-
-    builder.Services.AddDbContext<AppDbContext>(o =>
-        o.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
-
+    // Add PostgreSQL with Aspire (this will automatically pick up the connection string from Aspire)
+    builder.AddNpgsqlDbContext<AppDbContext>("hyroxdb");
 
     var app = builder.Build();
+
+    // Configure Swagger/OpenAPI middleware
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseSwagger();
+        app.UseSwaggerUI();
+    }
+
+    // Map default Aspire endpoints (/health, /alive)
+    app.MapDefaultEndpoints();
 
     // Add correlation ID middleware
     app.Use(async (context, next) =>
@@ -115,18 +82,6 @@ try
         options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
     });
 
-    app.MapHealthChecks("/healthz");
-
-    if (app.Environment.IsDevelopment())
-    {
-        app.MapOpenApi();
-        app.UseSwagger();
-        app.UseSwaggerUI(c =>
-        {
-            c.SwaggerEndpoint("/openapi/v1.json", "Hyrox API v1");
-            c.RoutePrefix = "swagger";
-        });
-    }
 
     var summaries = new[]
     {

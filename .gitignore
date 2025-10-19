@@ -49,38 +49,223 @@ app.*.map.json
 Thumbs.db
 ehthumbs.db
 Icon?
-.Spotlight-V100
-.Trashes
-._*
 
-# Editors/IDE
-.vscode/
-.idea/
-*.iml
+## .NET Core / ASP.NET Core
 *.swp
-*.swo
+*.*~
+project.lock.json
+.DS_Store
+*.pyc
+nupkg/
+
+# Visual Studio Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Bb]uild/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio
+.vs/
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+# NuGet Packages
+*.nupkg
+*.snupkg
+**/packages/*
+!**/packages/build/
+*.nuget.props
+*.nuget.targets
+
+# .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled files
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+*.pdb
+*.ipdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp
+*.tmp_proj
+*.vspscc
+*.vssscc
+
+# MSBuild Binary and Structured Log
+*.binlog
+
+# NuGet Symbol Packages
+*.snupkg
+
+# Files built by Visual Studio
+*_i.c
+*_p.c
+*_h.h
+*.ilk
+*.meta
+*.iobj
+*.ipdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp
+*.tmp_proj
+*_wpftmp.csproj
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+
+# Visual Studio profiler
+*.psess
+*.vsp
+*.vspx
+*.sap
+
+# Visual Studio Trace Files
+*.e2e
+
+# Rider
+.idea/
+*.sln.iml
+
+# JetBrains Rider
+.idea/
+*.sln.iml
 *.DotSettings.user
 
-# Build/Artifacts
-artifacts/
-coverage/
-dist/
-tmp/
-temp/
+# ReSharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
 
-# Logs
-*.log
-logs/
+# Rider project files
+.idea/
+*.sln.iml
+rider.project.model.nuget.info
+rider.project.restore.info
 
-# Docker / env
-.env
-**/.env
-docker-data/
+# Cake
+tools/
+!build/tools/packages.config
+
+# .NET Aspire
+.aspire/
+*.aspire.json
+**/aspire-manifest.json
+**/.aspire/
+
+# MSBuild cache and generated files
+project.assets.json
+project.nuget.cache
+project.packagespec.json
+*.csproj.nuget.dgspec.json
+*.csproj.nuget.g.props
+*.csproj.nuget.g.targets
+*.csproj.AssemblyReference.cache
+*.csproj.CoreCompileInputs.cache
+*.csproj.FileListAbsolute.txt
+*.AssemblyInfo.cs
+*.AssemblyInfoInputs.cache
+*.assets.cache
+*.sourcelink.json
+*.GeneratedMSBuildEditorConfig.editorconfig
+*GlobalUsings.g.cs
+*.csproj.AssemblyReference.cache
+
+# Connection strings and secrets
+**/appsettings.Development.json
+**/appsettings.Local.json
+**/appsettings.*.json
+!**/appsettings.json
+secrets.json
+*.pfx
+*.p12
+
+# Local databases
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Docker
 docker-compose.override.yml
+.dockerignore
 
-# OpenAPI generator cache
-.openapi-generator/
-generator-output/
-
-# Node (if any submodules use it)
-node_modules/
+# OpenAPI/Swagger generated files
+**/apps/mobile/lib/api_client/.openapi-generator/
+**/apps/mobile/lib/api_client/FILES
+**/apps/mobile/lib/api_client/VERSION

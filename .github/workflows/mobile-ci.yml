@@ -1,16 +1,29 @@
 name: mobile-ci
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: subosito/flutter-action@v2
-        with: { flutter-version: 'stable' }
+        with:
+          channel: stable         # or: flutter-version: '3.24.4'
+          cache: true
+
       - run: flutter --version
-      - run: flutter pub get
+
+      - name: Get packages
         working-directory: apps/mobile
-      - run: flutter analyze
+        run: flutter pub get
+
+      - name: Analyze
         working-directory: apps/mobile
-      - run: flutter test
+        run: flutter analyze
+
+      - name: Test
         working-directory: apps/mobile
+        run: flutter test --no-pub

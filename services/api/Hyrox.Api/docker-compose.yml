@@ -7,13 +7,51 @@ services:
       POSTGRES_PASSWORD: hyrox
       POSTGRES_DB: hyrox
     ports: ["5432:5432"]
-    volumes: [dbdata:/var/lib/postgresql/data]
+    volumes: 
+      - dbdata:/var/lib/postgresql/data
+      - ./Data/Init:/docker-entrypoint-initdb.d # Mount initialization scripts
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hyrox"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   api:
     build: .
     environment:
       ConnectionStrings__Default: Host=db;Database=hyrox;Username=hyrox;Password=hyrox
       ASPNETCORE_ENVIRONMENT: Development
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_SERVICE_NAME: hyrox-api
     ports: ["8080:8080"]
-    depends_on: [db]
+    depends_on: 
+      db:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+
+  # OpenTelemetry Collector
+  otel-collector:
+    image: otel/opentelemetry-collector:0.96.0
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./config/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+      - "8889:8889"   # Prometheus metrics
+    depends_on:
+      - jaeger
+
+  # Jaeger
+  jaeger:
+    image: jaegertracing/all-in-one:1.50
+    ports:
+      - "16686:16686"  # Web UI
+      - "14250:14250"  # Model
+      - "4317"         # OTLP gRPC
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+
 volumes:
   dbdata:

@@ -1,0 +1,19 @@
+version: "3.8"
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: hyrox
+      POSTGRES_PASSWORD: hyrox
+      POSTGRES_DB: hyrox
+    ports: ["5432:5432"]
+    volumes: [dbdata:/var/lib/postgresql/data]
+  api:
+    build: .
+    environment:
+      ConnectionStrings__Default: Host=db;Database=hyrox;Username=hyrox;Password=hyrox
+      ASPNETCORE_ENVIRONMENT: Development
+    ports: ["8080:8080"]
+    depends_on: [db]
+volumes:
+  dbdata:

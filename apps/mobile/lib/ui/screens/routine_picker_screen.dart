@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/predefined_routines.dart';
-import '../../providers/timer_provider.dart';
 import '../theme/hyrox_theme.dart';
-import '../widgets/glass_card.dart';
 import 'active_workout_screen.dart';
+import '../../providers/timer_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class RoutinePickerScreen extends ConsumerWidget {
   const RoutinePickerScreen({super.key});
@@ -12,115 +11,139 @@ class RoutinePickerScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final routines = [
-      PredefinedRoutines.womenSingle,
-      PredefinedRoutines.menSingle,
-      PredefinedRoutines.womenPro,
-      PredefinedRoutines.menPro,
-      PredefinedRoutines.doublesMixed,
-      PredefinedRoutines.doublesWomen,
-      PredefinedRoutines.doublesMen,
+      ('Women Single - Full Hyrox Race', PredefinedRoutines.womenSingle),
+      ('Men Single - Full Hyrox Race', PredefinedRoutines.menSingle),
+      ('Women Pro - Full Hyrox Race', PredefinedRoutines.womenPro),
+      ('Men Pro - Full Hyrox Race', PredefinedRoutines.menPro),
     ];
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: HyroxTheme.darkGradient,
-        ),
-        child: SafeArea(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'HYROX',
-                      style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                            fontSize: 48,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 2.0,
-                          ),
+              const SizedBox(height: 40),
+              // Title
+              Text(
+                'SELECT WORKOUT',
+                style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w900,
+                      color: HyroxTheme.yellow,
+                      letterSpacing: 2.0,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Choose Your Workout',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: HyroxTheme.lightGrey,
-                            letterSpacing: 1.0,
-                          ),
-                    ),
-                  ],
-                ),
+                textAlign: TextAlign.center,
               ),
+              const SizedBox(height: 8),
+              Text(
+                'Choose your Hyrox routine',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.grey.shade600,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 40),
+              
+              // Routine List
               Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: ListView.separated(
                   itemCount: routines.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 16),
                   itemBuilder: (context, index) {
                     final routine = routines[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16.0),
-                      child: GlassCard(
-                        padding: const EdgeInsets.all(20.0),
-                        child: InkWell(
-                          onTap: () {
-                            ref.read(timerProvider.notifier).startRoutine(routine);
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) => const ActiveWorkoutScreen(),
-                              ),
-                            );
-                          },
-                          borderRadius: BorderRadius.circular(16),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 4,
-                                height: 48,
-                                decoration: const BoxDecoration(
-                                  gradient: HyroxTheme.accentGradient,
-                                  borderRadius: BorderRadius.all(Radius.circular(2)),
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      routine.name.toUpperCase(),
-                                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                            letterSpacing: 1.2,
-                                          ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      '${routine.exercises.length} segments',
-                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                            fontSize: 14,
-                                          ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const Icon(
-                                Icons.arrow_forward_ios,
-                                color: HyroxTheme.yellow,
-                                size: 20,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                    return _buildRoutineCard(
+                      context,
+                      ref,
+                      routine.$1,
+                      routine.$2,
+                      routine.$2.exercises.length,
                     );
                   },
                 ),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRoutineCard(
+    BuildContext context,
+    WidgetRef ref,
+    String name,
+    dynamic routine,
+    int segmentCount,
+  ) {
+    return InkWell(
+      onTap: () {
+        ref.read(timerProvider.notifier).startRoutine(routine);
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => const ActiveWorkoutScreen()),
+        );
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1A1A),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: Colors.grey.shade800,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            // Icon
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: HyroxTheme.yellow.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.fitness_center,
+                color: HyroxTheme.yellow,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            
+            // Text
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '$segmentCount segments',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.grey.shade600,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+            
+            // Arrow
+            Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.grey.shade700,
+              size: 16,
+            ),
+          ],
         ),
       ),
     );

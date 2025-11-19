@@ -43,6 +43,7 @@ dependencies:
   built_value: ^8.9.0
   built_collection: ^5.1.1
   one_of_serializer: ^1.0.0
+  wakelock_plus: ^1.4.0
 
 dev_dependencies:
   flutter_test:

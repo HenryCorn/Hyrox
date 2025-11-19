@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
-import 'screens/workout_selection_screen.dart';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'ui/screens/routine_picker_screen.dart';
+import 'ui/theme/hyrox_theme.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const ProviderScope(child: HyroxApp()));
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class HyroxApp extends StatelessWidget {
+  const HyroxApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Hyrox Tracker',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
-      ),
-      home: const WorkoutSelectionScreen(),
+      theme: HyroxTheme.themeData,
+      home: const RoutinePickerScreen(),
     );
   }
 }

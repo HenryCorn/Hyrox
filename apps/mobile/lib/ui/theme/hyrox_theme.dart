@@ -7,6 +7,26 @@ class HyroxTheme {
   static const Color lightGrey = Color(0xFFF5F5F5);
   static const Color white = Color(0xFFFFFFFF);
 
+  // Gradient backgrounds for glass UI
+  static const LinearGradient darkGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      Color(0xFF0A0A0A),
+      Color(0xFF1A1A1A),
+      Color(0xFF2A2A2A),
+    ],
+  );
+
+  static const LinearGradient accentGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      Color(0xFFFFD700),
+      Color(0xFFFFA500),
+    ],
+  );
+
   static ThemeData get themeData {
     return ThemeData(
       useMaterial3: true,

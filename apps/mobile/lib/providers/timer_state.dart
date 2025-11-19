@@ -17,6 +17,8 @@ abstract class TimerState with _$TimerState {
     required Duration totalElapsed,
     required int currentExerciseIndex,
     required Duration currentExerciseElapsed,
+    required List<Duration> splits, // Time for each completed exercise
+    required bool isInRoxZone, // Whether currently in transition zone
     Routine? activeRoutine,
     DateTime? startTime,
     DateTime? lastTickTime,
@@ -27,5 +29,7 @@ abstract class TimerState with _$TimerState {
         totalElapsed: Duration.zero,
         currentExerciseIndex: 0,
         currentExerciseElapsed: Duration.zero,
+        splits: [],
+        isInRoxZone: false,
       );
 }

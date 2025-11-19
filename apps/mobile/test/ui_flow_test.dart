@@ -46,36 +46,58 @@ void main() {
     expect(find.text('1 KM RUN'), findsOneWidget);
 
     // 4. Verify Timer starts (check for START button initially)
+    // Scroll to make button visible
+    await tester.dragUntilVisible(
+      find.text('START'),
+      find.byType(SingleChildScrollView),
+      const Offset(0, -50),
+    );
     expect(find.text('START'), findsOneWidget);
     
     // Tap START to start
     await tester.tap(find.text('START'));
     await tester.pumpAndSettle();
     
-    // Now should see PAUSE
+    //Now should see PAUSE
+    await tester.dragUntilVisible(
+      find.text('PAUSE'),
+      find.byType(SingleChildScrollView),
+      const Offset(0, -50),
+    );
     expect(find.text('PAUSE'), findsOneWidget);
 
     // 5. Tap Next
-    await tester.tap(find.text('NEXT'));
+    await tester.dragUntilVisible(
+      find.text('NEXT EXERCISE'),
+      find.byType(SingleChildScrollView),
+      const Offset(0, -50),
+    );
+    await tester.tap(find.text('NEXT EXERCISE'));
     await tester.pumpAndSettle();
 
     // 6. Verify second exercise (1000 m SkiErg)
     expect(find.text('1000 M SKIERG'), findsOneWidget);
 
     // 7. Fast forward through exercises
-    // Women Single has 17 exercises (8 runs + 8 stations + 1 finish run? No, 8 runs + 8 stations = 16. Wait, let's check PredefinedRoutines)
-    // Actually, Hyrox is Run 1km, Ski 1km, Run 1km, Sled Push...
-    // It alternates. Total 8 runs + 8 workouts = 16 segments.
-    
     final routine = PredefinedRoutines.womenSingle;
     // We are already at index 1 (second exercise).
     for (int i = 1; i < routine.exercises.length - 1; i++) {
-      await tester.tap(find.text('NEXT'));
+      await tester.dragUntilVisible(
+        find.text('NEXT EXERCISE'),
+        find.byType(SingleChildScrollView),
+        const Offset(0, -50),
+      );
+      await tester.tap(find.text('NEXT EXERCISE'));
       await tester.pumpAndSettle();
     }
 
     // Now at last exercise. Tap Next to finish.
-    await tester.tap(find.text('NEXT'));
+    await tester.dragUntilVisible(
+      find.text('NEXT EXERCISE'),
+      find.byType(SingleChildScrollView),
+      const Offset(0, -50),
+    );
+    await tester.tap(find.text('NEXT EXERCISE'));
     await tester.pumpAndSettle();
 
     // 8. Verify SummaryScreen

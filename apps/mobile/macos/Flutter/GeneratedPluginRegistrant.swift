@@ -5,7 +5,7 @@
 import FlutterMacOS
 import Foundation
 
-cd import package_info_plus
+import package_info_plus
 import screen_brightness_macos
 import wakelock_plus
 

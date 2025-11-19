@@ -45,11 +45,11 @@ void main() {
     // Verify first exercise (1 km Run)
     expect(find.text('1 KM RUN'), findsOneWidget);
 
-    // 4. Verify Timer starts (check for RESUME button initially)
-    expect(find.text('RESUME'), findsOneWidget);
+    // 4. Verify Timer starts (check for START button initially)
+    expect(find.text('START'), findsOneWidget);
     
-    // Tap RESUME to start
-    await tester.tap(find.text('RESUME'));
+    // Tap START to start
+    await tester.tap(find.text('START'));
     await tester.pumpAndSettle();
     
     // Now should see PAUSE

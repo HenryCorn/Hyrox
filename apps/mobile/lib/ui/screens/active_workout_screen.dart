@@ -96,6 +96,58 @@ class ActiveWorkoutScreen extends ConsumerWidget {
               ),
             ],
             
+            // Next/Prev Exercises
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Previous
+                if (timerState.currentExerciseIndex > 0)
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'PREVIOUS',
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(color: HyroxTheme.darkGrey),
+                        ),
+                        Text(
+                          routine.exercises[timerState.currentExerciseIndex - 1].name.toUpperCase(),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: HyroxTheme.white),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  const Spacer(),
+
+                const SizedBox(width: 16),
+
+                // Next
+                if (timerState.currentExerciseIndex < routine.exercises.length - 1)
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          'NEXT',
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(color: HyroxTheme.darkGrey),
+                          textAlign: TextAlign.end,
+                        ),
+                        Text(
+                          routine.exercises[timerState.currentExerciseIndex + 1].name.toUpperCase(),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: HyroxTheme.white),
+                          textAlign: TextAlign.end,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  const Spacer(),
+              ],
+            ),
+            
             const Spacer(),
             
             // Controls
@@ -104,8 +156,8 @@ class ActiveWorkoutScreen extends ConsumerWidget {
                 Expanded(
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: isPaused ? HyroxTheme.yellow : HyroxTheme.darkGrey,
-                      foregroundColor: isPaused ? HyroxTheme.black : HyroxTheme.white,
+                      backgroundColor: isPaused || timerState.status == TimerStatus.initial ? HyroxTheme.yellow : HyroxTheme.darkGrey,
+                      foregroundColor: isPaused || timerState.status == TimerStatus.initial ? HyroxTheme.black : HyroxTheme.white,
                       side: BorderSide(color: HyroxTheme.yellow),
                     ),
                     onPressed: () {
@@ -115,7 +167,11 @@ class ActiveWorkoutScreen extends ConsumerWidget {
                         ref.read(timerProvider.notifier).pause();
                       }
                     },
-                    child: Text(isPaused || timerState.status == TimerStatus.initial ? 'RESUME' : 'PAUSE'),
+                    child: Text(
+                      timerState.status == TimerStatus.initial 
+                          ? 'START' 
+                          : (isPaused ? 'RESUME' : 'PAUSE')
+                    ),
                   ),
                 ),
                 const SizedBox(width: 16),

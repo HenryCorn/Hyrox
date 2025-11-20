@@ -1,10 +1,17 @@
-// Models for Hyrox workout app - Exercise model
-class Exercise {
-  final String name;
-  final String description;
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-  const Exercise({
-    required this.name,
-    required this.description,
-  });
+part 'exercise.freezed.dart';
+part 'exercise.g.dart';
+
+@freezed
+abstract class Exercise with _$Exercise {
+  const factory Exercise({
+    required String name,
+    required String description,
+    double? weight,
+    String? weightNote,
+  }) = _Exercise;
+
+  factory Exercise.fromJson(Map<String, dynamic> json) =>
+      _$ExerciseFromJson(json);
 }

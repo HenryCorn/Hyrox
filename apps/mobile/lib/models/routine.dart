@@ -1,18 +1,20 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'exercise.dart';
 
-/// A Hyrox workout routine consisting of multiple exercises.
-class Routine {
-  /// Display name of the routine (e.g. Men's Single, Women's Single).
-  final String name;
+part 'routine.freezed.dart';
+part 'routine.g.dart';
 
-  /// Ordered list of exercises to perform in this routine.
-  final List<Exercise> exercises;
+@freezed
+abstract class Routine with _$Routine {
+  const Routine._();
 
-  const Routine({
-    required this.name,
-    required this.exercises,
-  });
+  const factory Routine({
+    required String name,
+    required List<Exercise> exercises,
+  }) = _Routine;
 
-  /// Number of exercises in this routine.
+  factory Routine.fromJson(Map<String, dynamic> json) =>
+      _$RoutineFromJson(json);
+
   int get length => exercises.length;
 }

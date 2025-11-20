@@ -1,21 +1,21 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'routine.dart';
 
-/// Represents a completed workout run with durations for each exercise.
-class WorkoutRun {
-  /// The routine that was followed during this run.
-  final Routine routine;
+part 'workout_run.freezed.dart';
+part 'workout_run.g.dart';
 
-  /// A list of durations corresponding to each exercise in the routine.
-  /// The length of this list should match the number of exercises in [routine].
-  final List<Duration> exerciseDurations;
+@freezed
+abstract class WorkoutRun with _$WorkoutRun {
+  const WorkoutRun._();
 
-  WorkoutRun({
-    required this.routine,
-    required this.exerciseDurations,
-  }) : assert(exerciseDurations.length == routine.exercises.length,
-        'Durations must match number of exercises');
+  const factory WorkoutRun({
+    required Routine routine,
+    required List<Duration> exerciseDurations,
+  }) = _WorkoutRun;
 
-  /// Computes the total duration of the workout by summing all exercise durations.
+  factory WorkoutRun.fromJson(Map<String, dynamic> json) =>
+      _$WorkoutRunFromJson(json);
+
   Duration get totalDuration => exerciseDurations.fold(
       Duration.zero, (previous, element) => previous + element);
 }

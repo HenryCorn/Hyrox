@@ -1,18 +1,19 @@
-#addin nuget:?package=Cake.Docker&version=3.0.0
-#addin nuget:?package=Cake.GitVersion&version=3.0.0
-#tool "dotnet:?package=GitVersion.Tool&version=5.12.0"
+
+// #addin nuget:https://api.nuget.org/v3/index.json?package=Cake.GitVersion
+// #tool "dotnet:?package=GitVersion.Tool&version=5.12.0"
 
 // Arguments
 var target = Argument("target", "Default");
 var configuration = Argument("configuration", "Release");
 var dockerRegistry = Argument("registry", "ghcr.io/henrycorn");
+var apiBase = Argument("api_base", EnvironmentVariable("API_BASE") ?? "http://localhost:8080");
 
 // Paths
-var apiProject = "./services/api/Hyrox.Api/Hyrox.Api.csproj";
-var artifactsDir = "./artifacts";
+var apiProject = "../services/api/Hyrox.Api/Hyrox.Api.csproj";
+var artifactsDir = "../artifacts";
 var apiArtifactsDir = $"{artifactsDir}/api";
 var openApiSpecPath = $"{artifactsDir}/swagger.json";
-var mobileApiClientDir = "./apps/mobile/lib/api_client";
+var mobileApiClientDir = "../apps/mobile/lib/api_client";
 
 Task("Clean")
     .Does(() => {
@@ -39,20 +40,23 @@ Task("Publish")
 Task("DockerBuild")
     .IsDependentOn("Publish")
     .Does(() => {
-        var version = GitVersion().SemVer;
+        var version = "0.0.1"; // GitVersion().SemVer;
         StartProcess("docker", $"build -t {dockerRegistry}/hyrox-api:{version} -t {dockerRegistry}/hyrox-api:latest ./services/api/Hyrox.Api");
     });
 
 Task("DockerPush")
     .IsDependentOn("DockerBuild")
     .Does(() => {
-        var version = GitVersion().SemVer;
+        var version = "0.0.1"; // GitVersion().SemVer;
         StartProcess("docker", $"push {dockerRegistry}/hyrox-api:{version}");
         StartProcess("docker", $"push {dockerRegistry}/hyrox-api:latest");
     });
 
 Task("OpenApi:Export")
-    .Does(() => StartProcess("curl", $"-sS http://localhost:8080/swagger/v1/swagger.json -o {openApiSpecPath}"));
+    .Does(() => {
+        EnsureDirectoryExists(artifactsDir);
+        StartProcess("curl", $"-sS {apiBase}/swagger/v1/swagger.json -o {openApiSpecPath}");
+    });
 
 Task("OpenApi:GenerateClient")
     .IsDependentOn("OpenApi:Export")
@@ -70,5 +74,19 @@ Task("OpenApi:GenerateClient")
 
 Task("Default")
     .IsDependentOn("Test");
+
+
+
+Task("Dev:Docker")
+    .Does(() => {
+        StartProcess("docker", "compose up -d");
+        // Wait for health check?
+        // For now just start it.
+    });
+
+Task("DockerDown")
+    .Does(() => {
+        StartProcess("docker", "compose down");
+    });
 
 RunTarget(target);

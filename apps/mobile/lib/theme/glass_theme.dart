@@ -9,7 +9,7 @@ class GlassTheme {
         seedColor: seedColor,
         brightness: Brightness.light,
       ),
-      cardTheme: const CardTheme(
+      cardTheme: const CardThemeData(
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(16)),
@@ -23,7 +23,7 @@ class GlassTheme {
         centerTitle: true,
       ),
       scaffoldBackgroundColor: Colors.transparent,
-      dialogTheme: const DialogTheme(
+      dialogTheme: const DialogThemeData(
         backgroundColor: Color(0xE6FFFFFF),
         elevation: 0,
         shape: RoundedRectangleBorder(

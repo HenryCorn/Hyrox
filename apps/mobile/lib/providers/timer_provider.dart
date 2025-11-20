@@ -65,10 +65,17 @@ class TimerNotifier extends Notifier<TimerState> {
   void nextExercise() {
     if (state.activeRoutine == null) return;
     
-    // If currently in Rox Zone, move to the next exercise
+    // If currently in Rox Zone, move to the next exercise (or finish if we're past the last exercise)
     if (state.isInRoxZone) {
+      final nextIndex = state.currentExerciseIndex + 1;
+      // If we would go past the last exercise, finish the workout
+      if (nextIndex >= state.activeRoutine!.exercises.length) {
+        finish();
+        return;
+      }
+      
       state = state.copyWith(
-        currentExerciseIndex: state.currentExerciseIndex + 1,
+        currentExerciseIndex: nextIndex,
         currentExerciseElapsed: Duration.zero,
         isInRoxZone: false,
       );
@@ -88,11 +95,14 @@ class TimerNotifier extends Notifier<TimerState> {
         isInRoxZone: true,
       );
     } else {
-      // Last exercise - record split and finish
+      // Last exercise - record split and move to final Rox Zone
       final updatedSplits = List<Duration>.from(state.splits)
         ..add(state.currentExerciseElapsed);
-      state = state.copyWith(splits: updatedSplits);
-      finish();
+      state = state.copyWith(
+        currentExerciseElapsed: Duration.zero,
+        splits: updatedSplits,
+        isInRoxZone: true,
+      );
     }
   }
 

@@ -73,11 +73,16 @@ void main() {
     test('nextExercise advances index and resets current elapsed', () {
       notifier.startRoutine(testRoutine);
       notifier.start();
-      // Simulate some time passing (mocking time is hard without a clock abstraction, 
-      // but we can check state change logic)
-      notifier.nextExercise();
+      // With Rox Zones: first nextExercise() enters Rox Zone, second advances to next exercise
+      notifier.nextExercise(); // Enter Rox Zone
+      final roxState = container.read(timerProvider);
+      expect(roxState.isInRoxZone, true);
+      expect(roxState.currentExerciseIndex, 0); // Still on first exercise
+      
+      notifier.nextExercise(); // Advance to next exercise
       final state = container.read(timerProvider);
       expect(state.currentExerciseIndex, 1);
+      expect(state.isInRoxZone, false);
       expect(state.currentExerciseElapsed, Duration.zero);
       expect(state.status, TimerStatus.running);
     });
@@ -85,8 +90,11 @@ void main() {
     test('nextExercise finishes routine at end', () {
       notifier.startRoutine(testRoutine);
       notifier.start();
-      notifier.nextExercise(); // Index 1
-      notifier.nextExercise(); // Should finish
+      // Advance through all exercises and Rox Zones
+      notifier.nextExercise(); // Enter Rox Zone after Ex 1
+      notifier.nextExercise(); // Advance to Ex 2
+      notifier.nextExercise(); // Enter Rox Zone after Ex 2 (last exercise)
+      notifier.nextExercise(); // Finish workout
       final state = container.read(timerProvider);
       expect(state.status, TimerStatus.finished);
     });

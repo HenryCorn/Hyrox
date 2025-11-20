@@ -8,12 +8,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class RoutinePickerScreen extends ConsumerWidget {
   const RoutinePickerScreen({super.key});
 
-  IconData _getRoutineIcon(String name) {
-    if (name.contains('Women')) return Icons.female;
-    if (name.contains('Men')) return Icons.male;
-    return Icons.people;
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final routines = [

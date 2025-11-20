@@ -10,4 +10,4 @@ jobs:
       - name: Install Cake
         run: dotnet tool install Cake.Tool --global
       - name: Build and Test with Cake
-        run: dotnet cake build/build.cake --target=Test
+        run: dotnet-cake build/build.cake --target=Test

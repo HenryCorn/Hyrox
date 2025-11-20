@@ -9,12 +9,12 @@ class GlassTheme {
         seedColor: seedColor,
         brightness: Brightness.light,
       ),
-      cardTheme: CardTheme(
+      cardTheme: const CardTheme(
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.all(Radius.circular(16)),
         ),
-        color: Colors.white.withOpacity(0.15),
+        color: Color(0x26FFFFFF),
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
@@ -23,11 +23,11 @@ class GlassTheme {
         centerTitle: true,
       ),
       scaffoldBackgroundColor: Colors.transparent,
-      dialogTheme: DialogTheme(
-        backgroundColor: Colors.white.withOpacity(0.9),
+      dialogTheme: const DialogTheme(
+        backgroundColor: Color(0xE6FFFFFF),
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.all(Radius.circular(20)),
         ),
       ),
     );

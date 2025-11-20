@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/timer_provider.dart';
 import '../../providers/timer_state.dart';
 import '../theme/hyrox_theme.dart';
+import '../../utils/exercise_icons.dart';
 import 'summary_screen.dart';
 
 class ActiveWorkoutScreen extends ConsumerWidget {
@@ -96,165 +97,203 @@ class ActiveWorkoutScreen extends ConsumerWidget {
                       color: const Color(0xFF1A1A1A),
                       borderRadius: BorderRadius.circular(22),
                     ),
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Routine name label
-                        if (!timerState.isInRoxZone)
-                          Text(
-                            routine.name,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: Colors.grey.shade600,
+                    padding: const EdgeInsets.all(20),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return SingleChildScrollView(
+                          physics: const BouncingScrollPhysics(),
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              minHeight: constraints.maxHeight,
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                // Routine name label - always visible
+                                Text(
+                                  routine.name,
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        color: Colors.grey.shade600,
+                                        fontSize: 11,
+                                      ),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                            textAlign: TextAlign.center,
-                          ),
-                        const SizedBox(height: 12),
-                        
-                        // Big Timer
-                        FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            _formatDuration(timerState.currentExerciseElapsed),
-                            style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                                  fontSize: 72,
-                                  fontWeight: FontWeight.w900,
-                                  color: HyroxTheme.yellow,
-                                  fontFeatures: [const FontFeature.tabularFigures()],
-                                  shadows: [
-                                    Shadow(
-                                      color: HyroxTheme.yellow.withOpacity(0.5),
-                                      blurRadius: 20,
+                                const SizedBox(height: 8),
+                                
+                                // Big Timer
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    _formatDuration(timerState.currentExerciseElapsed),
+                                    style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                                          fontSize: 64,
+                                          fontWeight: FontWeight.w900,
+                                          color: HyroxTheme.yellow,
+                                          fontFeatures: [const FontFeature.tabularFigures()],
+                                          shadows: [
+                                            Shadow(
+                                              color: HyroxTheme.yellow.withOpacity(0.5),
+                                              blurRadius: 20,
+                                            ),
+                                          ],
+                                        ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                                
+                                const SizedBox(height: 20),
+                                
+                                // Show ROX ZONE or Exercise Info
+                                if (timerState.isInRoxZone) ...[
+                                  // ROX ZONE UI
+                                  Icon(
+                                    Icons.sports_score,
+                                    size: 36,
+                                    color: HyroxTheme.yellow.withOpacity(0.8),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'ROX ZONE',
+                                    style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.w900,
+                                          color: HyroxTheme.yellow,
+                                          letterSpacing: 2.0,
+                                        ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'Get Ready',
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                          color: Colors.grey.shade600,
+                                          fontSize: 12,
+                                        ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  // Next exercise
+                                  if (timerState.currentExerciseIndex + 1 < routine.exercises.length)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: HyroxTheme.yellow.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: HyroxTheme.yellow.withOpacity(0.3),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        routine.exercises[timerState.currentExerciseIndex + 1].name.toUpperCase(),
+                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                              color: HyroxTheme.yellow,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 11,
+                                            ),
+                                        textAlign: TextAlign.center,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                ] else ...[
+                                  // Exercise Icon
+                                  Container(
+                                    padding: const EdgeInsets.all(14),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          HyroxTheme.yellow.withOpacity(0.2),
+                                          HyroxTheme.yellow.withOpacity(0.05),
+                                        ],
+                                      ),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      ExerciseIcons.getIconForExercise(currentExercise),
+                                      size: 32,
+                                      color: HyroxTheme.yellow,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  
+                                  // Exercise Info
+                                  Text(
+                                    currentExercise.name.toUpperCase(),
+                                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                          letterSpacing: 0.8,
+                                        ),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  if (currentExercise.weight != null) ...[
+                                    const SizedBox(height: 10),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        gradient: HyroxTheme.accentGradient,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        '${currentExercise.weight} kg',
+                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                              color: HyroxTheme.black,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 12,
+                                            ),
+                                      ),
+                                    ),
+                                  ],
+                                  if (currentExercise.description.isNotEmpty) ...[
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      currentExercise.description,
+                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                            color: Colors.grey.shade600,
+                                            fontSize: 11,
+                                          ),
+                                      textAlign: TextAlign.center,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ],
+                                
+                                const SizedBox(height: 16),
+                                
+                                // Stat Cards Row (like reference image)
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildStatCard(
+                                        context,
+                                        'TOTAL TIME',
+                                        _formatDuration(timerState.totalElapsed),
+                                        Icons.timer_outlined,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: _buildStatCard(
+                                        context,
+                                        'SEGMENTS',
+                                        '${timerState.currentExerciseIndex + (timerState.isInRoxZone ? 1 : 0)}/${routine.exercises.length}',
+                                        Icons.list_alt,
+                                      ),
                                     ),
                                   ],
                                 ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                        
-                        const SizedBox(height: 24),
-                        
-                        // Show ROX ZONE or Exercise Info
-                        if (timerState.isInRoxZone) ...[
-                          // ROX ZONE UI
-                          Icon(
-                            Icons.sports_score,
-                            size: 40,
-                            color: HyroxTheme.yellow.withOpacity(0.8),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'ROX ZONE',
-                            style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w900,
-                                  color: HyroxTheme.yellow,
-                                  letterSpacing: 2.0,
-                                ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Get Ready',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Colors.grey.shade600,
-                                ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 16),
-                          // Next exercise
-                          if (timerState.currentExerciseIndex + 1 < routine.exercises.length)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: HyroxTheme.yellow.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: HyroxTheme.yellow.withOpacity(0.3),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Text(
-                                routine.exercises[timerState.currentExerciseIndex + 1].name.toUpperCase(),
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      color: HyroxTheme.yellow,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                textAlign: TextAlign.center,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                              ],
                             ),
-                        ] else ...[
-                          // Exercise Info
-                          Text(
-                            currentExercise.name.toUpperCase(),
-                            style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                  letterSpacing: 1.0,
-                                ),
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
                           ),
-                          if (currentExercise.weight != null) ...[
-                            const SizedBox(height: 12),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                gradient: HyroxTheme.accentGradient,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                '${currentExercise.weight} kg',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      color: HyroxTheme.black,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                              ),
-                            ),
-                          ],
-                          if (currentExercise.description.isNotEmpty) ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              currentExercise.description,
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Colors.grey.shade600,
-                                  ),
-                              textAlign: TextAlign.center,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ],
-                        
-                        const Spacer(),
-                        
-                        // Stat Cards Row (like reference image)
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildStatCard(
-                                context,
-                                'TOTAL TIME',
-                                _formatDuration(timerState.totalElapsed),
-                                Icons.timer_outlined,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _buildStatCard(
-                                context,
-                                'SEGMENTS',
-                                '${timerState.currentExerciseIndex + (timerState.isInRoxZone ? 1 : 0)}/${routine.exercises.length}',
-                                Icons.list_alt,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                        );
+                      },
                     ),
                   ),
                 ),

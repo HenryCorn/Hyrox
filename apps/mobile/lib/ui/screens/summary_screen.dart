@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/timer_provider.dart';
 import '../theme/hyrox_theme.dart';
+import '../../utils/exercise_icons.dart';
 
 class SummaryScreen extends ConsumerWidget {
   const SummaryScreen({super.key});
@@ -188,13 +189,40 @@ class SummaryScreen extends ConsumerWidget {
                       ),
                       child: Row(
                         children: [
-                          // Number badge
+                          // Exercise icon with gradient
                           Container(
-                            width: 32,
-                            height: 32,
+                            width: 40,
+                            height: 40,
                             decoration: BoxDecoration(
-                              color: HyroxTheme.yellow.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
+                              gradient: LinearGradient(
+                                colors: [
+                                  HyroxTheme.yellow.withOpacity(0.3),
+                                  HyroxTheme.yellow.withOpacity(0.1),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              ExerciseIcons.getIconForExercise(exercise),
+                              color: HyroxTheme.yellow,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          
+                          // Number indicator
+                          Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: Colors.black,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: HyroxTheme.yellow.withOpacity(0.3),
+                                width: 1.5,
+                              ),
                             ),
                             child: Center(
                               child: Text(
@@ -202,6 +230,7 @@ class SummaryScreen extends ConsumerWidget {
                                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                       color: HyroxTheme.yellow,
                                       fontWeight: FontWeight.bold,
+                                      fontSize: 10,
                                     ),
                               ),
                             ),

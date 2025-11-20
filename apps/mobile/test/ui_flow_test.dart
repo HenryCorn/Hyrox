@@ -6,7 +6,6 @@ import 'package:hyrox_tracker/models/predefined_routines.dart';
 import 'package:hyrox_tracker/services/wakelock_service.dart';
 import 'package:hyrox_tracker/ui/screens/active_workout_screen.dart';
 import 'package:hyrox_tracker/ui/screens/routine_picker_screen.dart';
-import 'package:hyrox_tracker/ui/screens/summary_screen.dart';
 
 class MockWakelockService implements WakelockService {
   @override

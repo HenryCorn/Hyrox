@@ -1,429 +1,502 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../models/predefined_routines.dart';
 import '../../providers/timer_provider.dart';
 import '../../providers/timer_state.dart';
-import '../theme/hyrox_theme.dart';
-import '../../utils/exercise_icons.dart';
+import '../../providers/health_provider.dart';
+import '../theme/nothing_theme.dart';
+import '../widgets/segmented_progress.dart';
 import 'summary_screen.dart';
 
-class ActiveWorkoutScreen extends ConsumerWidget {
+class ActiveWorkoutScreen extends ConsumerStatefulWidget {
   const ActiveWorkoutScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final timerState = ref.watch(timerProvider);
-    final routine = timerState.activeRoutine;
+  ConsumerState<ActiveWorkoutScreen> createState() =>
+      _ActiveWorkoutScreenState();
+}
 
-    // Handle finish state navigation
-    ref.listen(timerProvider, (previous, next) {
+class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
+  bool _workoutStartedHealth = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final timer = ref.watch(timerProvider);
+    final health = ref.watch(healthProvider);
+    final routine = timer.activeRoutine;
+
+    // Navigate to summary when workout finishes
+    ref.listen(timerProvider, (prev, next) {
       if (next.status == TimerStatus.finished) {
+        ref.read(healthProvider.notifier).workoutStopped();
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const SummaryScreen()),
+          MaterialPageRoute(builder: (_) => const SummaryScreen()),
         );
+      }
+      // Start health tracking on first start
+      if (prev?.status == TimerStatus.initial &&
+          next.status == TimerStatus.running &&
+          !_workoutStartedHealth) {
+        _workoutStartedHealth = true;
+        ref.read(healthProvider.notifier).workoutStarted();
+        _updateRunTracking(next);
+      }
+      // When exercise index changes, update run tracking
+      if (prev?.currentExerciseIndex != next.currentExerciseIndex ||
+          prev?.isInRoxZone != next.isInRoxZone) {
+        _updateRunTracking(next);
+        _syncToWatch(next);
       }
     });
 
     if (routine == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        backgroundColor: NothingTheme.black,
+        body: Center(
+            child: CircularProgressIndicator(color: NothingTheme.textDisplay)),
+      );
     }
 
-    final currentExercise = routine.exercises[timerState.currentExerciseIndex];
-    final isPaused = timerState.status == TimerStatus.paused;
+    final exercise = routine.exercises[timer.currentExerciseIndex];
+    final isRun = PredefinedRoutines.isRunSegment(exercise);
+    final isRunning = timer.status == TimerStatus.running;
+    final isPaused = timer.status == TimerStatus.paused;
+    final isInitial = timer.status == TimerStatus.initial;
+
+    // The "one break" rule: signal red for run segments, white otherwise.
+    final accentColor = isRun ? NothingTheme.accent : NothingTheme.textDisplay;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: NothingTheme.black,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: HyroxTheme.yellow),
-                    onPressed: () {
-                      ref.read(timerProvider.notifier).reset();
-                      Navigator.of(context).pop();
-                    },
-                  ),
-                  Expanded(
-                    child: Text(
-                      routine.name.toUpperCase(),
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: HyroxTheme.yellow,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.2,
-                          ),
-                      textAlign: TextAlign.center,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.more_vert, color: Colors.grey),
-                    onPressed: () {},
-                  ),
-                ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // ── Top bar ────────────────────────────────────────────────────
+            _TopBar(
+              routineName: routine.name,
+              onBack: () {
+                ref.read(timerProvider.notifier).reset();
+                ref.read(healthProvider.notifier).workoutStopped();
+                Navigator.of(context).pop();
+              },
+            ),
+
+            // ── Segmented progress ─────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: SegmentedProgress(
+                totalSegments: routine.exercises.length,
+                completedSegments: timer.splits.length,
+                currentSegment: timer.currentExerciseIndex,
+                accentCurrent: isRun,
+                height: 5,
               ),
-              
-              const SizedBox(height: 20),
-              
-              // Main Timer Card with Yellow Glow
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(24),
-                    gradient: LinearGradient(
-                      colors: [
-                        HyroxTheme.yellow.withOpacity(0.3),
-                        HyroxTheme.yellow.withOpacity(0.1),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+            ),
+            const SizedBox(height: 20),
+
+            // ── Main content ───────────────────────────────────────────────
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Segment counter
+                    Text(
+                      '${timer.currentExerciseIndex + 1} / ${routine.exercises.length}',
+                      style: NothingTheme.label(
+                          fontSize: 11, color: NothingTheme.textDisabled),
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: HyroxTheme.yellow.withOpacity(0.3),
-                        blurRadius: 30,
-                        spreadRadius: 0,
+                    const SizedBox(height: 8),
+
+                    // ── Hero timer (the "one break") ─────────────────────
+                    _HeroTimer(
+                      elapsed: timer.currentExerciseElapsed,
+                      color: accentColor,
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Exercise name
+                    Text(
+                      exercise.name.toUpperCase(),
+                      style: NothingTheme.body(
+                        fontSize: 20,
+                        weight: FontWeight.w600,
+                        color: NothingTheme.textDisplay,
+                      ),
+                    ),
+                    if (exercise.description.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        exercise.description,
+                        style: NothingTheme.label(
+                            fontSize: 11, color: NothingTheme.textSecondary),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
-                  ),
-                  padding: const EdgeInsets.all(2),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1A1A1A),
-                      borderRadius: BorderRadius.circular(22),
+                    if (exercise.weight != null) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: NothingTheme.borderVisible),
+                        ),
+                        child: Text(
+                          '${exercise.weight} KG',
+                          style: NothingTheme.label(
+                              fontSize: 11,
+                              color: NothingTheme.textPrimary),
+                        ),
+                      ),
+                    ],
+
+                    const Spacer(),
+
+                    // ── Live metrics row ──────────────────────────────────
+                    _MetricsRow(
+                      health: health,
+                      totalElapsed: timer.totalElapsed,
+                      isRun: isRun,
                     ),
-                    padding: const EdgeInsets.all(20),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        return SingleChildScrollView(
-                          physics: const BouncingScrollPhysics(),
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(
-                              minHeight: constraints.maxHeight,
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                // Routine name label - always visible
-                                Text(
-                                  routine.name,
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                        color: Colors.grey.shade600,
-                                        fontSize: 11,
-                                      ),
-                                  textAlign: TextAlign.center,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 8),
-                                
-                                // Big Timer
-                                FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  child: Text(
-                                    _formatDuration(timerState.currentExerciseElapsed),
-                                    style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                                          fontSize: 64,
-                                          fontWeight: FontWeight.w900,
-                                          color: HyroxTheme.yellow,
-                                          fontFeatures: [const FontFeature.tabularFigures()],
-                                          shadows: [
-                                            Shadow(
-                                              color: HyroxTheme.yellow.withOpacity(0.5),
-                                              blurRadius: 20,
-                                            ),
-                                          ],
-                                        ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                                
-                                const SizedBox(height: 20),
-                                
-                                // Show ROX ZONE or Exercise Info
-                                if (timerState.isInRoxZone) ...[
-                                  // ROX ZONE UI
-                                  Icon(
-                                    Icons.sports_score,
-                                    size: 36,
-                                    color: HyroxTheme.yellow.withOpacity(0.8),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'ROX ZONE',
-                                    style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                                          fontSize: 22,
-                                          fontWeight: FontWeight.w900,
-                                          color: HyroxTheme.yellow,
-                                          letterSpacing: 2.0,
-                                        ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    'Get Ready',
-                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                          color: Colors.grey.shade600,
-                                          fontSize: 12,
-                                        ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  const SizedBox(height: 12),
-                                  // Next exercise
-                                  if (timerState.currentExerciseIndex + 1 < routine.exercises.length)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: HyroxTheme.yellow.withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(
-                                          color: HyroxTheme.yellow.withOpacity(0.3),
-                                          width: 1,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        routine.exercises[timerState.currentExerciseIndex + 1].name.toUpperCase(),
-                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                              color: HyroxTheme.yellow,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 11,
-                                            ),
-                                        textAlign: TextAlign.center,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                ] else ...[
-                                  // Exercise Icon
-                                  Container(
-                                    padding: const EdgeInsets.all(14),
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          HyroxTheme.yellow.withOpacity(0.2),
-                                          HyroxTheme.yellow.withOpacity(0.05),
-                                        ],
-                                      ),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(
-                                      ExerciseIcons.getIconForExercise(currentExercise),
-                                      size: 32,
-                                      color: HyroxTheme.yellow,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  
-                                  // Exercise Info
-                                  Text(
-                                    currentExercise.name.toUpperCase(),
-                                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                          letterSpacing: 0.8,
-                                        ),
-                                    textAlign: TextAlign.center,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  if (currentExercise.weight != null) ...[
-                                    const SizedBox(height: 10),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        gradient: HyroxTheme.accentGradient,
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        '${currentExercise.weight} kg',
-                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                              color: HyroxTheme.black,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 12,
-                                            ),
-                                      ),
-                                    ),
-                                  ],
-                                  if (currentExercise.description.isNotEmpty) ...[
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      currentExercise.description,
-                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                            color: Colors.grey.shade600,
-                                            fontSize: 11,
-                                          ),
-                                      textAlign: TextAlign.center,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ],
-                                ],
-                                
-                                const SizedBox(height: 16),
-                                
-                                // Stat Cards Row (like reference image)
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: _buildStatCard(
-                                        context,
-                                        'TOTAL TIME',
-                                        _formatDuration(timerState.totalElapsed),
-                                        Icons.timer_outlined,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: _buildStatCard(
-                                        context,
-                                        'SEGMENTS',
-                                        '${timerState.currentExerciseIndex + (timerState.isInRoxZone ? 1 : 0)}/${routine.exercises.length}',
-                                        Icons.list_alt,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
+
+                    const SizedBox(height: 20),
+
+                    // ── Control buttons ───────────────────────────────────
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: _PillButton(
+                            label: isInitial
+                                ? '[ START ]'
+                                : (isPaused ? '[ RESUME ]' : '[ PAUSE ]'),
+                            primary: isInitial || isPaused,
+                            onTap: () {
+                              if (isInitial || isPaused) {
+                                ref.read(timerProvider.notifier).resume();
+                              } else {
+                                ref.read(timerProvider.notifier).pause();
+                              }
+                            },
                           ),
-                        );
-                      },
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          flex: 2,
+                          child: _PillButton(
+                            label: '[ NEXT ]',
+                            primary: false,
+                            onTap: isRunning || isPaused
+                                ? () => ref
+                                    .read(timerProvider.notifier)
+                                    .nextExercise()
+                                : null,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
+                    const SizedBox(height: 8),
+
+                    // ── Total time ────────────────────────────────────────
+                    Center(
+                      child: Text(
+                        'TOTAL  ${_fmt(timer.totalElapsed)}',
+                        style: NothingTheme.label(
+                            fontSize: 11, color: NothingTheme.textDisabled),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                 ),
               ),
-              
-              const SizedBox(height: 20),
-              
-              // Control Buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildControlButton(
-                      context,
-                      text: timerState.status == TimerStatus.initial 
-                          ? 'START' 
-                          : (isPaused ? 'RESUME' : 'PAUSE'),
-                      isYellow: isPaused || timerState.status == TimerStatus.initial,
-                      onTap: () {
-                        if (isPaused || timerState.status == TimerStatus.initial) {
-                          ref.read(timerProvider.notifier).resume();
-                        } else {
-                          ref.read(timerProvider.notifier).pause();
-                        }
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildControlButton(
-                      context,
-                      text: 'NEXT',
-                      isYellow: false,
-                      onTap: () {
-                        ref.read(timerProvider.notifier).nextExercise();
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildStatCard(BuildContext context, String label, String value, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.grey.shade900,
-          width: 1,
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+  void _updateRunTracking(TimerState state) {
+    if (state.activeRoutine == null) return;
+    final exercise =
+        state.activeRoutine!.exercises[state.currentExerciseIndex];
+    final isRun = PredefinedRoutines.isRunSegment(exercise);
+    if (isRun && state.status == TimerStatus.running) {
+      ref.read(healthProvider.notifier).startRunTracking();
+    } else {
+      ref.read(healthProvider.notifier).stopRunTracking();
+    }
+  }
+
+  void _syncToWatch(TimerState state) {
+    if (state.activeRoutine == null) return;
+    final exercise =
+        state.activeRoutine!.exercises[state.currentExerciseIndex];
+    ref.read(healthProvider.notifier).syncToWatch(
+          exerciseIndex: state.currentExerciseIndex,
+          exerciseName: exercise.name,
+          isRun: PredefinedRoutines.isRunSegment(exercise),
+          isRunning: state.status == TimerStatus.running,
+          totalElapsedMs: state.totalElapsed.inMilliseconds,
+          exerciseElapsedMs: state.currentExerciseElapsed.inMilliseconds,
+          totalExercises: state.activeRoutine!.exercises.length,
+        );
+  }
+
+  static String _fmt(Duration d) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    if (d.inHours > 0) {
+      return '${two(d.inHours)}:${two(d.inMinutes.remainder(60))}:${two(d.inSeconds.remainder(60))}';
+    }
+    return '${two(d.inMinutes.remainder(60))}:${two(d.inSeconds.remainder(60))}';
+  }
+}
+
+// ── Sub-widgets ──────────────────────────────────────────────────────────────
+class _TopBar extends StatelessWidget {
+  const _TopBar({required this.routineName, required this.onBack});
+  final String routineName;
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 8, 16, 8),
+      child: Row(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: HyroxTheme.yellow, size: 16),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey.shade600,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.0,
-                    ),
-              ),
-            ],
+          IconButton(
+            icon: const Icon(Icons.arrow_back_ios,
+                size: 18, color: NothingTheme.textSecondary),
+            onPressed: onBack,
+            padding: const EdgeInsets.all(8),
+          ),
+          const Spacer(),
+          Text(
+            routineName.toUpperCase(),
+            style: NothingTheme.label(
+                fontSize: 11, color: NothingTheme.textSecondary),
+          ),
+          const Spacer(),
+          const SizedBox(width: 40), // balance the back button
+        ],
+      ),
+    );
+  }
+}
+
+class _HeroTimer extends StatelessWidget {
+  const _HeroTimer({required this.elapsed, required this.color});
+  final Duration elapsed;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    final h = elapsed.inHours;
+    final m = elapsed.inMinutes.remainder(60);
+    final s = elapsed.inSeconds.remainder(60);
+    final cs = (elapsed.inMilliseconds.remainder(1000) ~/ 10);
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        if (h > 0) ...[
+          Text(
+            '${two(h)}:',
+            style: GoogleFonts.spaceMono(
+              fontSize: 64,
+              fontWeight: FontWeight.w700,
+              color: color,
+              height: 1.0,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
+        Text(
+          '${two(m)}:${two(s)}',
+          style: GoogleFonts.spaceMono(
+            fontSize: 64,
+            fontWeight: FontWeight.w700,
+            color: color,
+            height: 1.0,
+            fontFeatures: const [FontFeature.tabularFigures()],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8, left: 4),
+          child: Text(
+            '.${two(cs)}',
+            style: GoogleFonts.spaceMono(
+              fontSize: 24,
+              fontWeight: FontWeight.w400,
+              color: color.withOpacity(0.5),
+              height: 1.0,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MetricsRow extends StatelessWidget {
+  const _MetricsRow({
+    required this.health,
+    required this.totalElapsed,
+    required this.isRun,
+  });
+  final HealthMetrics health;
+  final Duration totalElapsed;
+  final bool isRun;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: NothingTheme.surface,
+        border: Border.all(color: NothingTheme.borderSubtle),
+      ),
+      child: Row(
+        children: [
+          _Metric(
+            label: 'BPM',
+            value: health.heartRateDisplay,
+            highlight: health.heartRate != null &&
+                health.heartRate! > 170,
+          ),
+          _vDivider(),
+          _Metric(
+            label: 'KCAL',
+            value: health.caloriesDisplay,
+          ),
+          _vDivider(),
+          if (isRun)
+            _Metric(
+              label: 'PACE /KM',
+              value: health.currentPaceSecsPerKm > 0
+                  ? _fmtPace(health.currentPaceSecsPerKm)
+                  : '--:--',
+              highlight: true,
+              highlightColor: NothingTheme.accent,
+            )
+          else
+            _Metric(
+              label: 'TIME',
+              value: _fmtShort(totalElapsed),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _vDivider() => Container(
+        width: 1,
+        height: 32,
+        margin: const EdgeInsets.symmetric(horizontal: 12),
+        color: NothingTheme.borderSubtle,
+      );
+
+  static String _fmtPace(double secsPerKm) {
+    final m = secsPerKm ~/ 60;
+    final s = (secsPerKm % 60).round();
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  }
+
+  static String _fmtShort(Duration d) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${two(d.inMinutes.remainder(60))}:${two(d.inSeconds.remainder(60))}';
+  }
+}
+
+class _Metric extends StatelessWidget {
+  const _Metric({
+    required this.label,
+    required this.value,
+    this.highlight = false,
+    this.highlightColor = NothingTheme.textDisplay,
+  });
+  final String label;
+  final String value;
+  final bool highlight;
+  final Color highlightColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            label,
+            style: NothingTheme.label(
+                fontSize: 9, color: NothingTheme.textDisabled),
           ),
           const SizedBox(height: 4),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              value,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: HyroxTheme.yellow,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+          Text(
+            value,
+            style: GoogleFonts.spaceMono(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: highlight ? highlightColor : NothingTheme.textPrimary,
+              fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildControlButton(BuildContext context, {
-    required String text,
-    required bool isYellow,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
+class _PillButton extends StatelessWidget {
+  const _PillButton({
+    required this.label,
+    required this.primary,
+    this.onTap,
+  });
+  final String label;
+  final bool primary;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onTap != null;
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: isYellow ? HyroxTheme.yellow : const Color(0xFF1A1A1A),
-          borderRadius: BorderRadius.circular(16),
-          border: isYellow ? null : Border.all(
-            color: Colors.grey.shade800,
-            width: 1,
-          ),
+          color: primary ? NothingTheme.textDisplay : Colors.transparent,
+          borderRadius: BorderRadius.circular(100),
+          border: primary
+              ? null
+              : Border.all(
+                  color: enabled
+                      ? NothingTheme.borderVisible
+                      : NothingTheme.borderSubtle,
+                ),
         ),
         child: Center(
           child: Text(
-            text,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: isYellow ? Colors.black : Colors.white,
-                  letterSpacing: 1.5,
-                ),
+            label,
+            style: GoogleFonts.spaceMono(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: primary
+                  ? NothingTheme.black
+                  : (enabled
+                      ? NothingTheme.textPrimary
+                      : NothingTheme.textDisabled),
+              letterSpacing: 1.2,
+            ),
           ),
         ),
       ),
     );
-  }
-
-  String _formatDuration(Duration duration) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    final hours = twoDigits(duration.inHours);
-    final minutes = twoDigits(duration.inMinutes.remainder(60));
-    final seconds = twoDigits(duration.inSeconds.remainder(60));
-    return duration.inHours > 0 ? '$hours:$minutes:$seconds' : '$minutes:$seconds';
   }
 }

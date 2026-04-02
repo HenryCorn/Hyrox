@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Hyrox Tracker</string>
+	<string>Hyrox</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -31,8 +31,6 @@
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
@@ -45,5 +43,21 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+
+	<!-- ── HealthKit ────────────────────────────────────────────────── -->
+	<key>NSHealthShareUsageDescription</key>
+	<string>Hyrox reads your heart rate and calories to show live stats during your workout.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Hyrox saves your workout sessions, heart rate, and calories to Apple Health.</string>
+
+	<!-- ── Location / GPS pace ──────────────────────────────────────── -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Hyrox uses your location to calculate running pace during the 1 km run segments.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Hyrox uses your location to track running pace. Background access keeps pace accurate when the screen is off.</string>
+
+	<!-- ── Motion (step cadence, if needed) ─────────────────────────── -->
+	<key>NSMotionUsageDescription</key>
+	<string>Hyrox may use motion data to count steps and improve pace accuracy.</string>
 </dict>
 </plist>

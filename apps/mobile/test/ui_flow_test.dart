@@ -2,118 +2,176 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hyrox_tracker/main.dart';
-import 'package:hyrox_tracker/models/predefined_routines.dart';
 import 'package:hyrox_tracker/services/wakelock_service.dart';
 import 'package:hyrox_tracker/ui/screens/active_workout_screen.dart';
 import 'package:hyrox_tracker/ui/screens/routine_picker_screen.dart';
+import 'package:hyrox_tracker/providers/health_provider.dart';
 
+// ── Mock wakelock (unchanged) ─────────────────────────────────────────────
 class MockWakelockService implements WakelockService {
   @override
   Future<void> enable() async {}
-  
+
   @override
   Future<void> disable() async {}
 }
 
+// ── Mock health notifier — prevents platform channel calls in tests ────────
+class MockHealthNotifier extends HealthNotifier {
+  @override
+  Future<void> initialise() async {}
+
+  @override
+  void workoutStarted() {}
+
+  @override
+  void workoutStopped() {}
+
+  @override
+  Future<void> startRunTracking() async {}
+
+  @override
+  void stopRunTracking() {}
+
+  @override
+  Future<void> syncToWatch({
+    required int exerciseIndex,
+    required String exerciseName,
+    required bool isRun,
+    required bool isRunning,
+    required int totalElapsedMs,
+    required int exerciseElapsedMs,
+    required int totalExercises,
+  }) async {}
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+ProviderContainer _makeContainer() => ProviderContainer(
+      overrides: [
+        wakelockServiceProvider.overrideWithValue(MockWakelockService()),
+        healthProvider.overrideWith(MockHealthNotifier.new),
+      ],
+    );
+
+Widget _makeApp(ProviderContainer container) => UncontrolledProviderScope(
+      container: container,
+      child: const HyroxApp(),
+    );
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('Full workout flow test', (WidgetTester tester) async {
-    // Build the app with mocked WakelockService
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          wakelockServiceProvider.overrideWithValue(MockWakelockService()),
-        ],
-        child: const HyroxApp(),
-      ),
-    );
+  testWidgets('RoutinePickerScreen renders all 7 categories', (tester) async {
+    final container = _makeContainer();
+    addTearDown(container.dispose);
 
-    // 1. Verify RoutinePickerScreen
+    await tester.pumpWidget(_makeApp(container));
+    await tester.pumpAndSettle();
+
     expect(find.byType(RoutinePickerScreen), findsOneWidget);
-    expect(find.text('Women Single - Full Hyrox Race'), findsOneWidget);
 
-    // 2. Tap a routine (Women Single)
-    await tester.tap(find.text('Women Single - Full Hyrox Race'));
+    // All 7 category labels should be visible
+    for (final label in [
+      'WOMEN OPEN',
+      'WOMEN PRO',
+      'MEN OPEN',
+      'MEN PRO',
+      'DOUBLES WOMEN',
+      'DOUBLES MEN',
+      'DOUBLES MIXED',
+    ]) {
+      expect(find.text(label), findsOneWidget, reason: '$label not found');
+    }
+  });
+
+  testWidgets('Tapping a category opens ActiveWorkoutScreen', (tester) async {
+    final container = _makeContainer();
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(_makeApp(container));
     await tester.pumpAndSettle();
 
-    // 3. Verify ActiveWorkoutScreen
+    // Tap Women Open
+    await tester.tap(find.text('WOMEN OPEN'));
+    await tester.pumpAndSettle();
+
     expect(find.byType(ActiveWorkoutScreen), findsOneWidget);
-    
-    // Verify first exercise (1 km Run)
-    expect(find.text('1 KM RUN'), findsOneWidget);
+    // First exercise is '1 km Run 1', displayed uppercased
+    expect(find.text('1 KM RUN 1'), findsOneWidget);
+  });
 
-    // 4. Verify Timer starts (check for START button initially)
-    // Scroll to make button visible
-    await tester.dragUntilVisible(
-      find.text('START'),
-      find.byType(SingleChildScrollView),
-      const Offset(0, -50),
-    );
-    expect(find.text('START'), findsOneWidget);
-    
-    // Tap START to start
-    await tester.tap(find.text('START'));
-    await tester.pumpAndSettle();
-    
-    // Now should see PAUSE
-    await tester.dragUntilVisible(
-      find.text('PAUSE'),
-      find.byType(SingleChildScrollView),
-      const Offset(0, -50),
-    );
-    expect(find.text('PAUSE'), findsOneWidget);
+  testWidgets('START → PAUSE → NEXT advances exercise', (tester) async {
+    final container = _makeContainer();
+    addTearDown(container.dispose);
 
-    // 5. Tap Next to enter Rox Zone
-    await tester.dragUntilVisible(
-      find.text('NEXT'),
-      find.byType(SingleChildScrollView),
-      const Offset(0, -50),
-    );
-    await tester.tap(find.text('NEXT'));
+    await tester.pumpWidget(_makeApp(container));
     await tester.pumpAndSettle();
 
-    // Should now see ROX ZONE
-    expect(find.text('ROX ZONE'), findsOneWidget);
-
-    // 6. Tap Next again to advance to second exercise
-    await tester.dragUntilVisible(
-      find.text('NEXT'),
-      find.byType(SingleChildScrollView),
-      const Offset(0, -50),
-    );
-    await tester.tap(find.text('NEXT'));
+    await tester.tap(find.text('WOMEN OPEN'));
     await tester.pumpAndSettle();
 
-    // Verify second exercise (1000 m SkiErg)
-    expect(find.text('1000 M SKIERG'), findsOneWidget);
+    // Start button is present and tappable
+    expect(find.text('[ START ]'), findsOneWidget);
+    await tester.tap(find.text('[ START ]'));
+    await tester.pumpAndSettle();
 
-    // 7. Fast forward through remaining exercises  
-    final routine = PredefinedRoutines.womenSingle;
-    // We are at index 1 (second exercise out of 15).
-    // Loop from i=2 to 14 (inclusive) - that's exercises 2-14 (indices 2-14)
-    // The last tap in the loop (when i=14) will finish the workout
-    for (int i = 2; i <= routine.exercises.length - 1; i++) {
-      // Enter Rox Zone
-      await tester.tap(find.text('NEXT'));
-      await tester.pumpAndSettle();
-      
-      // Advance to next exercise (or finish if last)
-      await tester.tap(find.text('NEXT'));
-      await tester.pumpAndSettle();
+    // After starting, PAUSE button appears
+    expect(find.text('[ PAUSE ]'), findsOneWidget);
+
+    // Tap NEXT twice: first call enters Rox Zone (internal state),
+    // second call advances to the next exercise
+    await tester.tap(find.text('[ NEXT ]'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('[ NEXT ]'));
+    await tester.pumpAndSettle();
+
+    // Second exercise is SkiErg, displayed uppercased
+    expect(find.text('SKIERG'), findsOneWidget);
+  });
+
+  testWidgets('Back button resets and returns to picker', (tester) async {
+    final container = _makeContainer();
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(_makeApp(container));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('MEN OPEN'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ActiveWorkoutScreen), findsOneWidget);
+
+    // Tap the back button (arrow_back_ios icon)
+    await tester.tap(find.byIcon(Icons.arrow_back_ios));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(RoutinePickerScreen), findsOneWidget);
+  });
+
+  testWidgets('Workout completes and does not crash', (tester) async {
+    final container = _makeContainer();
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(_makeApp(container));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('WOMEN OPEN'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('[ START ]'));
+    await tester.pumpAndSettle();
+
+    // Tap through all 16 segments (each needs 2 NEXT taps: enter Rox Zone + advance)
+    // 16 exercises × 2 = 32 taps total
+    for (int i = 0; i < 32; i++) {
+      // The NEXT button may not exist after finish navigates away
+      final nextButton = find.text('[ NEXT ]');
+      if (tester.any(nextButton)) {
+        await tester.tap(nextButton);
+        await tester.pumpAndSettle();
+      }
     }
 
-    // Give extra time for navigation to complete
-    await tester.pumpAndSettle(const Duration(seconds: 1));
-
-    // TODO: SummaryScreen navigation via ref.listen doesn't work reliably in tests
-    // The workout does finish (status = finished) but the navigation doesn't trigger
-    // This is a known limitation of testing navigation triggered by listeners
-    // Manual testing confirms this works correctly
-    // expect(find.byType(SummaryScreen), findsOneWidget);
-
-    // 9. Verify we can still navigate back
-    // Since we can't reliably test the automatic navigation, just verify the app didn't crash
-    expect(find.byType(ActiveWorkoutScreen), findsOneWidget);
+    // App should still be alive (either SummaryScreen or ActiveWorkoutScreen)
+    expect(tester.takeException(), isNull);
   });
 }

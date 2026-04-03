@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 import 'package:geolocator/geolocator.dart';
 
 /// Provides GPS-based running pace (min/km) using the device's location.

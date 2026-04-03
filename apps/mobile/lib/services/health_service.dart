@@ -17,7 +17,6 @@ class HealthService {
     final types = [
       HealthDataType.HEART_RATE,
       HealthDataType.ACTIVE_ENERGY_BURNED,
-      HealthDataType.WORKOUT,
     ];
 
     try {
@@ -25,7 +24,6 @@ class HealthService {
       final granted = await _health.requestAuthorization(
         types,
         permissions: [
-          HealthDataAccess.READ_WRITE,
           HealthDataAccess.READ_WRITE,
           HealthDataAccess.READ_WRITE,
         ],

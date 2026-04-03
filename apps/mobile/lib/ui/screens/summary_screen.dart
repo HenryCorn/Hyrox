@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../models/exercise.dart';
 import '../../models/predefined_routines.dart';
 import '../../providers/timer_provider.dart';
+import '../../providers/timer_state.dart';
 import '../../providers/health_provider.dart';
 import '../theme/nothing_theme.dart';
 import '../widgets/segmented_progress.dart';
@@ -80,7 +82,11 @@ class SummaryScreen extends ConsumerWidget {
                     const SizedBox(height: 32),
 
                     // ── Stats grid ──────────────────────────────────────────
-                    _StatsGrid(health: health, timer: timer),
+                    _StatsGrid(
+                      health: health,
+                      splits: timer.splits,
+                      exercises: routine.exercises,
+                    ),
 
                     const SizedBox(height: 32),
 
@@ -168,25 +174,25 @@ class _HeroTime extends StatelessWidget {
 }
 
 class _StatsGrid extends StatelessWidget {
-  const _StatsGrid({required this.health, required this.timer});
+  const _StatsGrid({
+    required this.health,
+    required this.splits,
+    required this.exercises,
+  });
   final HealthMetrics health;
-  final dynamic timer; // TimerState
+  final List<Duration> splits;
+  final List<Exercise> exercises;
 
   @override
   Widget build(BuildContext context) {
-    // Compute avg HR from history if available
-    final avgHr = health.heartRate; // last known (simple proxy for now)
+    final avgHr = health.heartRate;
 
-    final splits = timer.splits as List;
-    // Compute best run split
+    // Best 1 km run split
     Duration? bestRun;
-    if (timer.activeRoutine != null) {
-      final exercises = timer.activeRoutine!.exercises as List;
-      for (var i = 0; i < splits.length && i < exercises.length; i++) {
-        if (PredefinedRoutines.isRunSegment(exercises[i] as dynamic)) {
-          final d = splits[i] as Duration;
-          if (bestRun == null || d < bestRun!) bestRun = d;
-        }
+    for (var i = 0; i < splits.length && i < exercises.length; i++) {
+      if (PredefinedRoutines.isRunSegment(exercises[i])) {
+        final d = splits[i];
+        if (bestRun == null || d < bestRun!) bestRun = d;
       }
     }
 

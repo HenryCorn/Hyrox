@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../models/exercise.dart';
 import '../../models/predefined_routines.dart';
 import '../../providers/timer_provider.dart';
-import '../../providers/timer_state.dart';
 import '../../providers/health_provider.dart';
 import '../theme/nothing_theme.dart';
 import '../widgets/segmented_progress.dart';
@@ -192,7 +191,7 @@ class _StatsGrid extends StatelessWidget {
     for (var i = 0; i < splits.length && i < exercises.length; i++) {
       if (PredefinedRoutines.isRunSegment(exercises[i])) {
         final d = splits[i];
-        if (bestRun == null || d < bestRun!) bestRun = d;
+        if (bestRun == null || d < bestRun) bestRun = d;
       }
     }
 
@@ -214,7 +213,7 @@ class _StatsGrid extends StatelessWidget {
         const SizedBox(width: 1),
         _StatCell(
           label: 'BEST RUN',
-          value: bestRun != null ? _fmtSplit(bestRun!) : '--:--',
+          value: bestRun != null ? _fmtSplit(bestRun) : '--:--',
           unit: 'MIN',
         ),
       ],

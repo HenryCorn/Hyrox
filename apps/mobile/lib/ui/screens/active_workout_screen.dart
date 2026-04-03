@@ -334,7 +334,7 @@ class _HeroTimer extends StatelessWidget {
             style: GoogleFonts.spaceMono(
               fontSize: 24,
               fontWeight: FontWeight.w400,
-              color: color.withOpacity(0.5),
+              color: color.withValues(alpha: 0.5),
               height: 1.0,
               fontFeatures: const [FontFeature.tabularFigures()],
             ),

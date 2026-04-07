@@ -5,8 +5,10 @@ import '../../models/predefined_routines.dart';
 import '../../providers/timer_provider.dart';
 import '../../providers/timer_state.dart';
 import '../../providers/health_provider.dart';
+import '../../providers/target_provider.dart';
 import '../theme/nothing_theme.dart';
 import '../widgets/segmented_progress.dart';
+import '../widgets/pace_indicator.dart';
 import 'summary_screen.dart';
 
 class ActiveWorkoutScreen extends ConsumerStatefulWidget {
@@ -24,6 +26,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   Widget build(BuildContext context) {
     final timer = ref.watch(timerProvider);
     final health = ref.watch(healthProvider);
+    final target = ref.watch(targetProvider);
     final routine = timer.activeRoutine;
 
     // Navigate to summary when workout finishes
@@ -64,8 +67,26 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     final isPaused = timer.status == TimerStatus.paused;
     final isInitial = timer.status == TimerStatus.initial;
 
-    // The "one break" rule: signal red for run segments, white otherwise.
-    final accentColor = isRun ? NothingTheme.accent : NothingTheme.textDisplay;
+    // ── Pace status computation ──────────────────────────────────────────
+    final segmentTarget =
+        target.targetForExercise(timer.currentExerciseIndex, routine);
+    final segmentPaceStatus =
+        computePaceStatus(timer.currentExerciseElapsed, segmentTarget);
+    final overallPaceStatus = computeOverallPaceStatus(
+      completedSplits: timer.splits,
+      currentElapsed: timer.currentExerciseElapsed,
+      currentIndex: timer.currentExerciseIndex,
+      target: target,
+      routine: routine,
+    );
+
+    // Color: use pace status when targets are set, otherwise default behavior
+    final Color accentColor;
+    if (segmentPaceStatus != PaceStatus.none) {
+      accentColor = paceColor(segmentPaceStatus, isRun: isRun);
+    } else {
+      accentColor = isRun ? NothingTheme.accent : NothingTheme.textDisplay;
+    }
 
     return Scaffold(
       backgroundColor: NothingTheme.black,
@@ -76,6 +97,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
             // ── Top bar ────────────────────────────────────────────────────
             _TopBar(
               routineName: routine.name,
+              overallStatus: overallPaceStatus,
               onBack: () {
                 ref.read(timerProvider.notifier).reset();
                 ref.read(healthProvider.notifier).workoutStopped();
@@ -103,11 +125,17 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Segment counter
-                    Text(
-                      '${timer.currentExerciseIndex + 1} / ${routine.exercises.length}',
-                      style: NothingTheme.label(
-                          fontSize: 11, color: NothingTheme.textDisabled),
+                    // Segment counter + pace indicator
+                    Row(
+                      children: [
+                        Text(
+                          '${timer.currentExerciseIndex + 1} / ${routine.exercises.length}',
+                          style: NothingTheme.label(
+                              fontSize: 11, color: NothingTheme.textDisabled),
+                        ),
+                        const Spacer(),
+                        PaceIndicator(status: segmentPaceStatus),
+                      ],
                     ),
                     const SizedBox(height: 8),
 
@@ -116,6 +144,25 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                       elapsed: timer.currentExerciseElapsed,
                       color: accentColor,
                     ),
+
+                    // ── Target line below hero timer ─────────────────────
+                    if (segmentTarget != null) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Text(
+                            'TARGET  ${_fmt(segmentTarget)}',
+                            style: NothingTheme.label(
+                                fontSize: 10, color: NothingTheme.textDisabled),
+                          ),
+                          const SizedBox(width: 12),
+                          PaceDelta(
+                            elapsed: timer.currentExerciseElapsed,
+                            target: segmentTarget,
+                          ),
+                        ],
+                      ),
+                    ],
 
                     const SizedBox(height: 16),
 
@@ -202,12 +249,25 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                     ),
                     const SizedBox(height: 8),
 
-                    // ── Total time ────────────────────────────────────────
+                    // ── Total time + overall pace ────────────────────────
                     Center(
-                      child: Text(
-                        'TOTAL  ${_fmt(timer.totalElapsed)}',
-                        style: NothingTheme.label(
-                            fontSize: 11, color: NothingTheme.textDisabled),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'TOTAL  ${_fmt(timer.totalElapsed)}',
+                            style: NothingTheme.label(
+                                fontSize: 11, color: NothingTheme.textDisabled),
+                          ),
+                          if (overallPaceStatus != PaceStatus.none) ...[
+                            const SizedBox(width: 8),
+                            PaceIndicator(
+                              status: overallPaceStatus,
+                              fontSize: 9,
+                              showLabel: false,
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -259,8 +319,13 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
 // ── Sub-widgets ──────────────────────────────────────────────────────────────
 class _TopBar extends StatelessWidget {
-  const _TopBar({required this.routineName, required this.onBack});
+  const _TopBar({
+    required this.routineName,
+    required this.overallStatus,
+    required this.onBack,
+  });
   final String routineName;
+  final PaceStatus overallStatus;
   final VoidCallback onBack;
 
   @override
@@ -281,6 +346,14 @@ class _TopBar extends StatelessWidget {
             style: NothingTheme.label(
                 fontSize: 11, color: NothingTheme.textSecondary),
           ),
+          if (overallStatus != PaceStatus.none) ...[
+            const SizedBox(width: 6),
+            PaceIndicator(
+              status: overallStatus,
+              fontSize: 9,
+              showLabel: false,
+            ),
+          ],
           const Spacer(),
           const SizedBox(width: 40), // balance the back button
         ],

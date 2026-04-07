@@ -7,16 +7,19 @@ Everything you need to go from this repo to a live, monetised app on the App Sto
 ## Table of Contents
 
 1. [Prerequisites](#1-prerequisites)
-2. [AdMob — Ads Setup](#2-admob--ads-setup)
-3. [Apple Sign-In](#3-apple-sign-in)
-4. [Google Sign-In](#4-google-sign-in)
-5. [Backend API — Production Deployment](#5-backend-api--production-deployment)
-6. [Flutter Build — Environment Variables](#6-flutter-build--environment-variables)
-7. [iOS — Signing & Provisioning](#7-ios--signing--provisioning)
-8. [Testing on Your Physical Devices](#8-testing-on-your-physical-devices)
-9. [TestFlight Beta](#9-testflight-beta)
-10. [App Store Submission](#10-app-store-submission)
-11. [Revenue Optimisation Tips](#11-revenue-optimisation-tips)
+2. [Target Priority Order](#2-target-priority-order)
+3. [Simulator — Reload After Code Changes](#3-simulator--reload-after-code-changes)
+4. [AdMob — Ads Setup](#4-admob--ads-setup)
+5. [Apple Sign-In](#5-apple-sign-in)
+6. [Google Sign-In](#6-google-sign-in)
+7. [Backend API — Production Deployment](#7-backend-api--production-deployment)
+8. [Flutter Build — Environment Variables](#8-flutter-build--environment-variables)
+9. [iOS — Signing & Provisioning](#9-ios--signing--provisioning)
+10. [Secrets & Info Required Before Device Testing](#10-secrets--info-required-before-device-testing)
+11. [Testing on Your Physical Devices](#11-testing-on-your-physical-devices)
+12. [TestFlight Beta](#12-testflight-beta)
+13. [App Store Submission — Step by Step](#13-app-store-submission--step-by-step)
+14. [Revenue Optimisation Tips](#14-revenue-optimisation-tips)
 
 ---
 
@@ -33,7 +36,106 @@ Everything you need to go from this repo to a live, monetised app on the App Sto
 
 ---
 
-## 2. AdMob — Ads Setup
+## 2. Target Priority Order
+
+When a user sets targets on the Target Setup screen, the app resolves the effective target for each segment using a strict priority chain. Understanding this prevents confusion when multiple targets overlap.
+
+### 2.1 Priority table
+
+| Priority | Source | Applies to |
+|----------|--------|-----------|
+| **1 (highest)** | Individual exercise target (`INDIVIDUAL SEGMENT TARGETS → TARGET TIME`) | Any segment |
+| **2** | Individual run pace (`INDIVIDUAL SEGMENT TARGETS → PACE /KM`) | Run segments only |
+| **3** | Global run pace (`RUN PACE (ALL RUNS)`) | Run segments only |
+| **4 (lowest)** | No target — segment shown without colour indicator | Any segment |
+
+### 2.2 Rules in plain English
+
+- **Individual exercise target always wins.** If you set a specific time for segment N, that time is used regardless of any pace setting.
+- **Individual pace overrides the global pace.** If you set a per-segment pace for a run, it replaces the global pace for that run only. Other runs still use the global pace.
+- **Global run pace applies to every run with no individual override.** It is a convenient way to set the same pace for all 8 km runs at once.
+- **Stations (SkiErg, Rowing, etc.) never inherit run paces.** Only an explicit individual exercise target applies to them; global run pace and individual run paces are ignored.
+- **Rox Zones are never targeted.** The transition zones between exercises have no target — they are excluded from pace colouring entirely.
+
+### 2.3 Examples
+
+```
+Global run pace = 5:30/km
+Individual pace for Run 3 = 4:45/km
+Individual exercise target for SkiErg = 4:00
+
+Run 1   → 5:30/km  (from global run pace, P3)
+Run 2   → 5:30/km  (from global run pace, P3)
+Run 3   → 4:45/km  (individual pace overrides global, P2)
+SkiErg  → 4:00     (individual exercise target, P1)
+Rox Zone → no target (always excluded)
+```
+
+### 2.4 Tests
+
+Priority behaviour is fully covered in `apps/mobile/test/workout_target_priority_test.dart`. Run them with:
+
+```bash
+cd apps/mobile
+flutter test test/workout_target_priority_test.dart
+```
+
+---
+
+## 3. Simulator — Reload After Code Changes
+
+### 3.1 Hot reload (fastest — UI/logic changes)
+
+While the app is running, press **`r`** in the terminal that ran `flutter run`. Applies Dart changes in < 1 second. State is preserved.
+
+```bash
+# The terminal shows:
+# Flutter run key commands.
+# r Hot reload. 🔥🔥🔥
+```
+
+Use hot reload for: widget changes, logic tweaks, style fixes.
+
+### 3.2 Hot restart (state reset)
+
+Press **`R`** (capital) in the same terminal. Restarts the Dart VM, resetting all state. Same speed as hot reload.
+
+Use hot restart for: provider/notifier changes, `initState` changes, anything that hot reload misses.
+
+### 3.3 Full rebuild (new packages, native changes)
+
+Stop the app (`q` in terminal), then:
+
+```bash
+cd apps/mobile
+flutter run -d <simulator-id>
+```
+
+Find your simulator ID:
+
+```bash
+flutter devices
+# Example output:
+# iPhone 16 Plus (mobile) • CE9D0FF2-... • ios • com.apple.CoreSimulator...
+```
+
+Use full rebuild for: adding packages (`pubspec.yaml` changes), changing `Info.plist`, changing `AppDelegate`, changing native iOS code.
+
+### 3.4 Wipe simulator state (clean slate)
+
+If the app is in a broken state or you want to test first-launch:
+
+```bash
+# Stop the app first, then:
+xcrun simctl erase <simulator-id>   # wipes all data for that simulator
+flutter run -d <simulator-id>
+```
+
+Or in the simulator: **Device → Erase All Content and Settings**.
+
+---
+
+## 4. AdMob — Ads Setup
 
 ### 2.1 Create an AdMob account
 
@@ -89,7 +191,7 @@ Remove this before release (or gate it on `kDebugMode`, which is already done).
 
 ---
 
-## 3. Apple Sign-In
+## 5. Apple Sign-In
 
 ### 3.1 App ID capability
 
@@ -116,7 +218,7 @@ Unlike OAuth, Apple Sign-In uses JWT tokens signed by Apple. The API validates t
 
 ---
 
-## 4. Google Sign-In
+## 6. Google Sign-In
 
 ### 4.1 Create OAuth credentials
 
@@ -157,7 +259,7 @@ In Xcode, add it to the Runner target (drag into the project navigator).
 
 ---
 
-## 5. Backend API — Production Deployment
+## 7. Backend API — Production Deployment
 
 ### 5.1 Database
 
@@ -234,7 +336,7 @@ curl https://your-api-url/swagger  # → Swagger UI (disable in prod if desired)
 
 ---
 
-## 6. Flutter Build — Environment Variables
+## 8. Flutter Build — Environment Variables
 
 All secrets and environment-specific values are passed via `--dart-define` so they are compiled into the binary and never in source control.
 
@@ -282,7 +384,7 @@ Store secrets in GitHub → Settings → Secrets:
 
 ---
 
-## 7. iOS — Signing & Provisioning
+## 9. iOS — Signing & Provisioning
 
 ### 7.1 In Xcode
 
@@ -304,21 +406,84 @@ For release/TestFlight, use a **Distribution** certificate and an **App Store** 
 
 ---
 
-## 8. Testing on Your Physical Devices
+## 10. Secrets & Info Required Before Device Testing
 
-### 8.1 Register device in Apple Developer
+Before you can run the app on a real device or submit to the App Store, you need to collect the following. Everything marked **secret** must never be committed to git.
+
+### 10.1 Apple Developer account
+
+| What | Where to get it |
+|------|----------------|
+| Apple Developer Team ID | [developer.apple.com](https://developer.apple.com) → Membership → Team ID |
+| Bundle Identifier | You choose it (e.g. `com.yourname.hyrox`) — register it under Identifiers |
+| Distribution certificate | Xcode → Settings → Accounts → Manage Certificates → + → Apple Distribution |
+| App Store provisioning profile | developer.apple.com → Profiles → New → App Store Distribution |
+
+### 10.2 AdMob (Google)
+
+| What | Where to get it | Secret? |
+|------|----------------|---------|
+| AdMob App ID | admob.google.com → Apps → your app | Yes — goes in `Info.plist` (not git-ignored, so use test ID until release) |
+| Banner ad unit ID (station) | AdMob → Ad units | Yes — pass via `--dart-define` |
+| Rewarded ad unit ID (save gate) | AdMob → Ad units | Yes — pass via `--dart-define` |
+| Banner ad unit ID (friends) | AdMob → Ad units | Yes — pass via `--dart-define` |
+
+### 10.3 Google Sign-In
+
+| What | Where to get it | Secret? |
+|------|----------------|---------|
+| OAuth Client ID | Google Cloud Console → APIs & Services → Credentials → iOS | No (it's in the app binary) |
+| `GoogleService-Info.plist` | Download from Cloud Console | No (but keep private) — add to Xcode target |
+| Server Client ID (for API validation) | Same credentials page — Web client ID | Yes — set as `GoogleSignIn__ClientId` env var on server |
+
+### 10.4 Backend API
+
+| What | Description | Secret? |
+|------|-------------|---------|
+| PostgreSQL connection string | Host, database, username, password | **Yes** — env var `ConnectionStrings__hyroxdb` |
+| JWT signing key | ≥ 32 random chars (`openssl rand -base64 32`) | **Yes** — env var `Jwt__Key` |
+| Deployed API base URL | e.g. `https://hyrox-api.railway.app` | No — pass via `--dart-define=API_BASE_URL=...` |
+
+### 10.5 App Store Connect
+
+| What | Where to get it |
+|------|----------------|
+| App Store Connect API key (for upload) | App Store Connect → Users → Integrations → Keys → Generate |
+| Key ID | Shown next to your key |
+| Issuer ID | Shown at the top of the Keys page |
+| `.p8` private key file | Downloaded once at creation — store safely, cannot re-download |
+
+### 10.6 Summary checklist
+
+Before your first real-device build, confirm you have:
+
+- [ ] Apple Developer Team ID and Bundle ID registered
+- [ ] Distribution certificate installed in Keychain
+- [ ] App Store provisioning profile downloaded
+- [ ] Real AdMob App ID in `Info.plist`
+- [ ] `GoogleService-Info.plist` added to Xcode target
+- [ ] JWT key generated and stored (password manager or secrets vault)
+- [ ] PostgreSQL provisioned and connection string noted
+- [ ] API deployed and `/health` returning 200
+- [ ] App Store Connect API key `.p8` saved securely
+
+---
+
+## 11. Testing on Your Physical Devices
+
+### 11.1 Register device in Apple Developer
 
 1. Connect device → Xcode identifies UDID automatically.
 2. Apple Developer → Devices → Register Device.
 
-### 8.2 Run directly
+### 11.2 Run directly
 
 ```bash
 flutter devices                          # find your device ID
 flutter run -d <your-device-id>          # debug build, hot reload works
 ```
 
-### 8.3 Test the full ad flow
+### 11.3 Test the full ad flow
 
 - Station banner: start a workout, advance past the first run to a station.
 - Rewarded ad gate: complete a workout (advance through all exercises).
@@ -326,15 +491,15 @@ flutter run -d <your-device-id>          # debug build, hot reload works
 
 Google test ads will appear automatically in debug mode. They look like real ads but never generate revenue.
 
-### 8.4 Test auth flows
+### 11.4 Test auth flows
 
 Apple Sign-In only works on a real device (not simulator). Google Sign-In works on both.
 
 ---
 
-## 9. TestFlight Beta
+## 12. TestFlight Beta
 
-### 9.1 Archive the app
+### 12.1 Archive the app
 
 ```bash
 flutter build ipa \
@@ -346,7 +511,7 @@ flutter build ipa \
 
 The `.ipa` is output to `build/ios/ipa/`.
 
-### 9.2 Upload to App Store Connect
+### 12.2 Upload to App Store Connect
 
 ```bash
 xcrun altool --upload-app \
@@ -358,7 +523,7 @@ xcrun altool --upload-app \
 
 Or drag the `.ipa` into **Transporter** (Mac App Store).
 
-### 9.3 Add testers
+### 12.3 Add testers
 
 App Store Connect → TestFlight → Add Internal / External Testers → send invite link.
 
@@ -366,51 +531,141 @@ External testers (up to 10,000) require Apple review (usually < 24 hours for Tes
 
 ---
 
-## 10. App Store Submission
+## 13. App Store Submission — Step by Step
 
-### 10.1 AdMob disclosure
+### 13.1 Prepare App Store Connect
 
-Apple requires you to disclose ad tracking in the Privacy Nutrition Label:
+1. Go to [appstoreconnect.apple.com](https://appstoreconnect.apple.com) → My Apps → **+** → New App.
+2. Fill in:
+   - **Platform**: iOS
+   - **Name**: Hyrox Tracker (or your chosen name)
+   - **Primary Language**: English
+   - **Bundle ID**: select the one you registered (e.g. `com.yourname.hyrox`)
+   - **SKU**: any unique string (e.g. `hyrox-tracker-001`)
+3. Click Create.
 
-- App Store Connect → App Privacy → Data collected: **Advertising Data**, **Identifiers**, **Usage Data**.
-- Select: "Used for Third-Party Advertising".
+### 13.2 Fill in app metadata
 
-### 10.2 App Tracking Transparency (ATT)
+In your app's page on App Store Connect:
 
-For personalised ads (higher CPM), add ATT prompt. Add to `Info.plist`:
+- **App Information**: subtitle, category (Health & Fitness), content rating.
+- **Pricing and Availability**: Free (revenue comes from ads).
+- **App Privacy**: set data types (see §13.5 AdMob disclosure).
+- **Screenshots**: required sizes — 6.9" (iPhone 16 Pro Max) and 6.5" (iPhone 14 Plus). Add 12.9" iPad if supporting iPad. Use the simulator: `⌘ + S` saves a screenshot.
+- **Description & Keywords**: write these for App Store search — include "hyrox", "workout tracker", "race prep", "running".
+
+### 13.3 Build and archive
+
+Bump version and build number in `apps/mobile/pubspec.yaml`:
+
+```yaml
+version: 1.0.0+1   # format: version+buildNumber
+```
+
+Build the IPA:
+
+```bash
+cd apps/mobile
+flutter build ipa --release \
+  --dart-define=API_BASE_URL=https://your-api.com \
+  --dart-define=ADMOB_IOS_BANNER_STATION=ca-app-pub-XXXX/YYYY \
+  --dart-define=ADMOB_IOS_REWARDED_SAVE=ca-app-pub-XXXX/YYYY \
+  --dart-define=ADMOB_IOS_BANNER_FRIENDS=ca-app-pub-XXXX/YYYY
+```
+
+The IPA is written to `build/ios/ipa/`.
+
+### 13.4 Upload the build
+
+**Option A — Transporter (easiest)**
+
+1. Download [Transporter](https://apps.apple.com/app/transporter/id1450874784) from the Mac App Store.
+2. Sign in with your Apple ID.
+3. Drag the `.ipa` file into Transporter → **Deliver**.
+
+**Option B — xcrun altool (CLI)**
+
+```bash
+xcrun altool --upload-app \
+  --type ios \
+  --file build/ios/ipa/hyrox_tracker.ipa \
+  --apiKey YOUR_KEY_ID \
+  --apiIssuer YOUR_ISSUER_ID \
+  --apiKey-path ~/private_keys/AuthKey_KEYID.p8
+```
+
+Get `KEY_ID` and `ISSUER_ID` from App Store Connect → Users → Integrations → Keys.
+
+Wait ~5 minutes for the build to process, then it appears under **TestFlight** and **App Store** in App Store Connect.
+
+### 13.5 AdMob disclosure (required)
+
+Apple will reject the app if you skip this.
+
+App Store Connect → your app → **App Privacy** → Data collected:
+
+| Data type | Collected | Used for |
+|-----------|-----------|---------|
+| Advertising Data | Yes | Third-Party Advertising |
+| Device ID | Yes | Third-Party Advertising |
+| Usage Data | Yes | Analytics, Third-Party Advertising |
+| Coarse Location | Yes (if ATT granted) | Third-Party Advertising |
+
+### 13.6 App Tracking Transparency (ATT)
+
+Required for personalised ads (significantly higher CPM). Add to `Info.plist`:
 
 ```xml
 <key>NSUserTrackingUsageDescription</key>
 <string>We use this to show you relevant ads and keep the app free.</string>
 ```
 
-And request permission in `main()`:
+And request permission early in `main()` (after `AdService.initialise()`):
 
 ```dart
 import 'package:app_tracking_transparency/app_tracking_transparency.dart';
 
-final status = await AppTrackingTransparency.requestTrackingAuthorization();
+await AppTrackingTransparency.requestTrackingAuthorization();
 ```
 
-Add `app_tracking_transparency: ^3.0.4` to `pubspec.yaml`.
+Add to `pubspec.yaml`:
 
-Without ATT consent, AdMob shows non-personalised ads (lower CPM but still significant revenue).
+```yaml
+app_tracking_transparency: ^3.0.4
+```
 
-### 10.3 Checklist before submitting
+Without consent, AdMob shows non-personalised ads (lower CPM but still earns revenue).
 
+### 13.7 Submit for review
+
+1. In App Store Connect → your app → **App Store** tab → select your build.
+2. Fill in **Review Information**:
+   - Demo account credentials (create a test account on your API).
+   - Contact info.
+   - Notes: explain the rewarded ad gate ("Users must watch a short ad to save their workout — this is intentional and disclosed").
+3. Click **Submit for Review**.
+
+Review usually takes 24–48 hours. Apple may ask clarifying questions about the ad placement or Sign In with Apple usage — answer promptly.
+
+### 13.8 Pre-submission checklist
+
+- [ ] Version + build number bumped in `pubspec.yaml`
 - [ ] Real AdMob App ID in `Info.plist`
-- [ ] Real ad unit IDs passed via `--dart-define`
-- [ ] JWT key is ≥ 32 random chars, not the placeholder
-- [ ] Apple Sign-In bundle ID matches exactly
-- [ ] `GoogleService-Info.plist` added to Xcode target
-- [ ] API deployed and `/health` returns 200
-- [ ] App Privacy label filled in App Store Connect
-- [ ] ATT prompt added (optional but recommended)
-- [ ] Version and build number bumped in `pubspec.yaml`
+- [ ] Real ad unit IDs in build command (never hardcoded in source)
+- [ ] JWT key is ≥ 32 random chars (not the placeholder from `appsettings.json`)
+- [ ] Apple Sign-In bundle ID matches Xcode exactly
+- [ ] `GoogleService-Info.plist` added to Xcode target and committed
+- [ ] API deployed, `/health` returns 200, migrations applied
+- [ ] App Privacy label completed in App Store Connect
+- [ ] ATT prompt added to `Info.plist` and `main()`
+- [ ] Screenshots uploaded (6.9" and 6.5" minimum)
+- [ ] App description, keywords, and category filled
+- [ ] Review notes written explaining the rewarded-ad save gate
+- [ ] Demo account credentials ready for the reviewer
 
 ---
 
-## 11. Revenue Optimisation Tips
+## 14. Revenue Optimisation Tips
 
 ### Ad placement strategy (already implemented)
 

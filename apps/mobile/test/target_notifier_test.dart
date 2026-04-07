@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hyrox_tracker/models/workout_target.dart';
 import 'package:hyrox_tracker/providers/target_provider.dart';
 
 void main() {
@@ -151,7 +150,6 @@ void main() {
     group('state immutability', () {
       test('modifying returned exerciseTargets does not affect state', () {
         notifier.setExerciseTarget(0, const Duration(minutes: 5));
-        final state = container.read(targetProvider);
 
         // Even if someone tries to modify the map, the state shouldn't change
         // (WorkoutTarget stores const maps from copyWith)

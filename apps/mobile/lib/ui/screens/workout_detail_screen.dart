@@ -18,7 +18,7 @@ class WorkoutDetailScreen extends StatelessWidget {
     if (routine != null) {
       for (var i = 0; i < record.splits.length && i < routine.exercises.length; i++) {
         if (PredefinedRoutines.isRunSegment(routine.exercises[i])) {
-          if (bestRun == null || record.splits[i] < bestRun!) {
+          if (bestRun == null || record.splits[i] < bestRun) {
             bestRun = record.splits[i];
           }
         }
@@ -105,7 +105,7 @@ class WorkoutDetailScreen extends StatelessWidget {
                         const SizedBox(width: 1),
                         _StatCell(
                           label: 'BEST RUN',
-                          value: bestRun != null ? _fmtShort(bestRun!) : '--:--',
+                          value: bestRun != null ? _fmtShort(bestRun) : '--:--',
                           unit: 'MIN',
                         ),
                       ],

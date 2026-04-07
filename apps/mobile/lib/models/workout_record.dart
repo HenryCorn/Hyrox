@@ -38,7 +38,7 @@ class WorkoutRecord {
       };
 
   static WorkoutRecord fromRow(Map<String, dynamic> row) {
-    List<Duration> _parseDurations(String json) =>
+    List<Duration> parseDurations(String json) =>
         (jsonDecode(json) as List)
             .map((ms) => Duration(milliseconds: ms as int))
             .toList();
@@ -51,9 +51,9 @@ class WorkoutRecord {
           row['completed_at'] as int),
       totalDuration:
           Duration(milliseconds: row['total_duration_ms'] as int),
-      splits: _parseDurations(row['splits_json'] as String),
+      splits: parseDurations(row['splits_json'] as String),
       roxZoneSplits:
-          _parseDurations(row['rox_zone_splits_json'] as String),
+          parseDurations(row['rox_zone_splits_json'] as String),
       avgHeartRate: row['avg_heart_rate'] as int?,
       totalCalories: row['total_calories'] as double?,
     );

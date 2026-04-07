@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'providers/auth_provider.dart';
 import 'services/ad_service.dart';
 import 'ui/screens/auth_screen.dart';
-import 'ui/screens/friends_screen.dart';
 import 'ui/screens/routine_picker_screen.dart';
 import 'ui/theme/nothing_theme.dart';
 

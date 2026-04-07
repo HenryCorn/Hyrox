@@ -47,7 +47,9 @@ class AppDatabase {
     final rows = await db.query('user_profile', columns: ['id'], limit: 1);
     if (rows.isEmpty) {
       await _bootstrapUser(db);
-      return localUserId;
+      final newRows = await db.query('user_profile', columns: ['id'], limit: 1);
+      _cachedUserId = newRows.first['id'] as String;
+      return _cachedUserId!;
     }
     _cachedUserId = rows.first['id'] as String;
     return _cachedUserId!;

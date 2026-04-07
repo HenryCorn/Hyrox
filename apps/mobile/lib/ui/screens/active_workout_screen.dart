@@ -15,7 +15,6 @@ import '../../services/ad_service.dart';
 import '../theme/nothing_theme.dart';
 import '../widgets/banner_ad_widget.dart';
 import '../widgets/pace_indicator.dart';
-import '../widgets/segmented_progress.dart';
 import 'summary_screen.dart';
 
 class ActiveWorkoutScreen extends ConsumerStatefulWidget {

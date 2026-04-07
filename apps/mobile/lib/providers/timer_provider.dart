@@ -64,40 +64,39 @@ class TimerNotifier extends Notifier<TimerState> {
 
   void nextExercise() {
     if (state.activeRoutine == null) return;
-    
-    // If currently in Rox Zone, move to the next exercise (or finish if we're past the last exercise)
+    final exercises = state.activeRoutine!.exercises;
+
+    // Exiting Rox Zone → record rox zone split, advance to next exercise
     if (state.isInRoxZone) {
       final nextIndex = state.currentExerciseIndex + 1;
-      // If we would go past the last exercise, finish the workout
-      if (nextIndex >= state.activeRoutine!.exercises.length) {
+      final updatedRoxSplits = List<Duration>.from(state.roxZoneSplits)
+        ..add(state.currentExerciseElapsed);
+      if (nextIndex >= exercises.length) {
+        state = state.copyWith(roxZoneSplits: updatedRoxSplits);
         finish();
         return;
       }
-      
       state = state.copyWith(
         currentExerciseIndex: nextIndex,
         currentExerciseElapsed: Duration.zero,
+        roxZoneSplits: updatedRoxSplits,
         isInRoxZone: false,
       );
       return;
     }
-    
-    // If on an exercise, record split and move to Rox Zone (or finish if last exercise)
-    if (state.currentExerciseIndex < state.activeRoutine!.exercises.length - 1) {
-      // Record the split for the current exercise
-      final updatedSplits = List<Duration>.from(state.splits)
-        ..add(state.currentExerciseElapsed);
-      
-      // Move to Rox Zone
-      state = state.copyWith(
-        currentExerciseElapsed: Duration.zero,
-        splits: updatedSplits,
-        isInRoxZone: true,
-      );
+
+    // On an exercise → record split
+    final updatedSplits = List<Duration>.from(state.splits)
+      ..add(state.currentExerciseElapsed);
+    final isLastExercise =
+        state.currentExerciseIndex >= exercises.length - 1;
+
+    if (isLastExercise) {
+      // Last exercise: no Rox Zone, go straight to finish
+      state = state.copyWith(splits: updatedSplits);
+      finish();
     } else {
-      // Last exercise - record split and move to final Rox Zone
-      final updatedSplits = List<Duration>.from(state.splits)
-        ..add(state.currentExerciseElapsed);
+      // Enter Rox Zone
       state = state.copyWith(
         currentExerciseElapsed: Duration.zero,
         splits: updatedSplits,

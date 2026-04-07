@@ -446,6 +446,9 @@ class PredefinedRoutines {
     doublesMixed.name: doublesMixed,
   };
 
+  /// Returns the Routine for the given name, or null if not found.
+  static Routine? byName(String name) => all[name];
+
   // ── Helpers ───────────────────────────────────────────────────────────────
   /// Returns true if the given exercise is a 1 km run segment.
   static bool isRunSegment(Exercise exercise) =>

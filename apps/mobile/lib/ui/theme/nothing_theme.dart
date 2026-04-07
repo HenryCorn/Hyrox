@@ -28,8 +28,10 @@ class NothingTheme {
   static const Color textDisplay = Color(0xFFFFFFFF);
 
   // ── Accent / status ──────────────────────────────────────────────────────
-  /// Signal red — active run segments, urgent states. ONE per screen.
-  static const Color accent = Color(0xFFD71921);
+  /// Hyrox yellow — primary brand accent (run segments, CTAs, fills).
+  static const Color accent = Color(0xFFF5C400);
+  /// Signal red — reserved for high-HR alerts only.
+  static const Color danger = Color(0xFFD71921);
   static const Color success = Color(0xFF4A9E5C);
   static const Color warning = Color(0xFFD4A843);
   static const Color interactive = Color(0xFF5B9BF6);
@@ -110,7 +112,7 @@ class NothingTheme {
         surface: black,
         primary: textDisplay,
         secondary: textSecondary,
-        error: accent,
+        error: danger,
         onSurface: textPrimary,
         onPrimary: black,
       ),

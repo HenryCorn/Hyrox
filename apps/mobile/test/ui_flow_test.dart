@@ -5,6 +5,7 @@ import 'package:hyrox_tracker/main.dart';
 import 'package:hyrox_tracker/services/wakelock_service.dart';
 import 'package:hyrox_tracker/ui/screens/active_workout_screen.dart';
 import 'package:hyrox_tracker/ui/screens/routine_picker_screen.dart';
+import 'package:hyrox_tracker/ui/screens/target_setup_screen.dart';
 import 'package:hyrox_tracker/providers/health_provider.dart';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────
@@ -48,6 +49,18 @@ Widget makeTestApp() => ProviderScope(
       child: const HyroxApp(),
     );
 
+/// Helper: navigate from routine picker through target setup to active workout.
+Future<void> navigateToActiveWorkout(WidgetTester tester,
+    {String category = 'WOMEN OPEN'}) async {
+  await tester.tap(find.text(category));
+  await tester.pumpAndSettle();
+  // Now on TargetSetupScreen — tap start button
+  final startBtn = find.textContaining('[ START');
+  expect(startBtn, findsOneWidget);
+  await tester.tap(startBtn);
+  await tester.pumpAndSettle();
+}
+
 // ── Tests ─────────────────────────────────────────────────────────────────
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -71,12 +84,23 @@ void main() {
     }
   });
 
-  testWidgets('Tapping a category opens ActiveWorkoutScreen', (tester) async {
+  testWidgets('Tapping a category opens TargetSetupScreen', (tester) async {
     await tester.pumpWidget(makeTestApp());
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('WOMEN OPEN'));
     await tester.pumpAndSettle();
+
+    expect(find.byType(TargetSetupScreen), findsOneWidget);
+    expect(find.text('SET TARGETS'), findsOneWidget);
+  });
+
+  testWidgets('Starting without targets opens ActiveWorkoutScreen',
+      (tester) async {
+    await tester.pumpWidget(makeTestApp());
+    await tester.pumpAndSettle();
+
+    await navigateToActiveWorkout(tester);
 
     expect(find.byType(ActiveWorkoutScreen), findsOneWidget);
     // First exercise: '1 km Run 1' displayed uppercased
@@ -87,8 +111,7 @@ void main() {
     await tester.pumpWidget(makeTestApp());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('WOMEN OPEN'));
-    await tester.pumpAndSettle();
+    await navigateToActiveWorkout(tester);
 
     expect(find.text('[ START ]'), findsOneWidget);
 
@@ -107,8 +130,7 @@ void main() {
     await tester.pumpWidget(makeTestApp());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('WOMEN OPEN'));
-    await tester.pumpAndSettle();
+    await navigateToActiveWorkout(tester);
 
     await tester.tap(find.text('[ START ]'));
     await tester.pumpAndSettle();
@@ -123,13 +145,28 @@ void main() {
     expect(find.text('SKIERG'), findsOneWidget);
   });
 
-  testWidgets('Back button returns to picker', (tester) async {
+  testWidgets('Back button from active workout returns to picker',
+      (tester) async {
+    await tester.pumpWidget(makeTestApp());
+    await tester.pumpAndSettle();
+
+    await navigateToActiveWorkout(tester, category: 'MEN OPEN');
+    expect(find.byType(ActiveWorkoutScreen), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.arrow_back_ios));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(RoutinePickerScreen), findsOneWidget);
+  });
+
+  testWidgets('Back button from target setup returns to picker',
+      (tester) async {
     await tester.pumpWidget(makeTestApp());
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('MEN OPEN'));
     await tester.pumpAndSettle();
-    expect(find.byType(ActiveWorkoutScreen), findsOneWidget);
+    expect(find.byType(TargetSetupScreen), findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.arrow_back_ios));
     await tester.pumpAndSettle();
@@ -141,8 +178,7 @@ void main() {
     await tester.pumpWidget(makeTestApp());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('WOMEN OPEN'));
-    await tester.pumpAndSettle();
+    await navigateToActiveWorkout(tester);
 
     await tester.tap(find.text('[ START ]'));
     await tester.pumpAndSettle();

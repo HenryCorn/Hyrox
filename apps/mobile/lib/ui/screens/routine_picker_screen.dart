@@ -3,10 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../models/predefined_routines.dart';
 import '../../models/routine.dart';
-import '../../providers/timer_provider.dart';
 import '../../providers/health_provider.dart';
 import '../theme/nothing_theme.dart';
-import 'active_workout_screen.dart';
+import 'target_setup_screen.dart';
 
 class RoutinePickerScreen extends ConsumerStatefulWidget {
   const RoutinePickerScreen({super.key});
@@ -132,10 +131,9 @@ class _RoutinePickerScreenState extends ConsumerState<RoutinePickerScreen> {
       );
 
   void _startRoutine(BuildContext context, Routine routine) {
-    ref.read(timerProvider.notifier).startRoutine(routine);
     Navigator.of(context).push(
       MaterialPageRoute(
-          builder: (_) => const ActiveWorkoutScreen()),
+          builder: (_) => TargetSetupScreen(routine: routine)),
     );
   }
 

@@ -5,8 +5,10 @@ import '../../models/exercise.dart';
 import '../../models/predefined_routines.dart';
 import '../../providers/timer_provider.dart';
 import '../../providers/health_provider.dart';
+import '../../providers/target_provider.dart';
 import '../theme/nothing_theme.dart';
 import '../widgets/segmented_progress.dart';
+import '../widgets/pace_indicator.dart';
 
 class SummaryScreen extends ConsumerWidget {
   const SummaryScreen({super.key});
@@ -15,6 +17,7 @@ class SummaryScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final timer = ref.watch(timerProvider);
     final health = ref.watch(healthProvider);
+    final target = ref.watch(targetProvider);
     final routine = timer.activeRoutine;
 
     if (routine == null) {
@@ -26,6 +29,8 @@ class SummaryScreen extends ConsumerWidget {
         ),
       );
     }
+
+    final effectiveGlobal = target.effectiveGlobalTarget(routine);
 
     return Scaffold(
       backgroundColor: NothingTheme.black,
@@ -78,6 +83,31 @@ class SummaryScreen extends ConsumerWidget {
                     // ── Hero total time ─────────────────────────────────────
                     _HeroTime(elapsed: timer.totalElapsed),
 
+                    // ── Target comparison ────────────────────────────────────
+                    if (effectiveGlobal != null) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Text(
+                            'TARGET  ${_fmtDuration(effectiveGlobal)}',
+                            style: NothingTheme.label(
+                                fontSize: 10, color: NothingTheme.textDisabled),
+                          ),
+                          const SizedBox(width: 12),
+                          PaceDelta(
+                            elapsed: timer.totalElapsed,
+                            target: effectiveGlobal,
+                          ),
+                          const SizedBox(width: 8),
+                          PaceIndicator(
+                            status: computePaceStatus(
+                                timer.totalElapsed, effectiveGlobal),
+                            fontSize: 10,
+                          ),
+                        ],
+                      ),
+                    ],
+
                     const SizedBox(height: 32),
 
                     // ── Stats grid ──────────────────────────────────────────
@@ -114,11 +144,14 @@ class SummaryScreen extends ConsumerWidget {
                           : null;
                       final isRun =
                           PredefinedRoutines.isRunSegment(exercise);
+                      final segTarget =
+                          target.targetForExercise(i, routine);
                       return _SplitRow(
                         index: i + 1,
                         name: exercise.name,
                         split: split,
                         isRun: isRun,
+                        target: segTarget,
                       );
                     }),
 
@@ -142,6 +175,14 @@ class SummaryScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  static String _fmtDuration(Duration d) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    if (d.inHours > 0) {
+      return '${two(d.inHours)}:${two(d.inMinutes.remainder(60))}:${two(d.inSeconds.remainder(60))}';
+    }
+    return '${two(d.inMinutes.remainder(60))}:${two(d.inSeconds.remainder(60))}';
   }
 }
 
@@ -283,16 +324,32 @@ class _SplitRow extends StatelessWidget {
     required this.name,
     required this.split,
     required this.isRun,
+    this.target,
   });
   final int index;
   final String name;
   final Duration? split;
   final bool isRun;
+  final Duration? target;
 
   @override
   Widget build(BuildContext context) {
-    final splitColor =
-        isRun ? NothingTheme.accent : NothingTheme.textPrimary;
+    final paceStatus =
+        split != null ? computePaceStatus(split!, target) : PaceStatus.none;
+
+    // Color based on pace status when target is set, otherwise default
+    final Color splitColor;
+    if (paceStatus != PaceStatus.none) {
+      splitColor = switch (paceStatus) {
+        PaceStatus.ahead => NothingTheme.success,
+        PaceStatus.onPace =>
+          isRun ? NothingTheme.accent : NothingTheme.textPrimary,
+        PaceStatus.behind => NothingTheme.accent,
+        PaceStatus.none => NothingTheme.textPrimary,
+      };
+    } else {
+      splitColor = isRun ? NothingTheme.accent : NothingTheme.textPrimary;
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -331,6 +388,15 @@ class _SplitRow extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
+          // Pace indicator symbol (colorblind)
+          if (paceStatus != PaceStatus.none) ...[
+            PaceIndicator(
+              status: paceStatus,
+              fontSize: 9,
+              showLabel: false,
+            ),
+            const SizedBox(width: 6),
+          ],
           // Split time
           if (split != null)
             Text(
@@ -350,6 +416,14 @@ class _SplitRow extends StatelessWidget {
                 color: NothingTheme.textDisabled,
               ),
             ),
+          // Delta vs target
+          if (split != null && target != null) ...[
+            const SizedBox(width: 8),
+            SizedBox(
+              width: 52,
+              child: PaceDelta(elapsed: split!, target: target),
+            ),
+          ],
         ],
       ),
     );

@@ -81,8 +81,10 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
         : null;
 
     // ── Pace status computation ──────────────────────────────────────────
-    final segmentTarget =
-        target.targetForExercise(timer.currentExerciseIndex, routine);
+    // Rox Zone is an untimed transition — never apply an exercise target there.
+    final segmentTarget = isRoxZone
+        ? null
+        : target.targetForExercise(timer.currentExerciseIndex, routine);
     final segmentPaceStatus =
         computePaceStatus(timer.currentExerciseElapsed, segmentTarget);
     final overallPaceStatus = computeOverallPaceStatus(

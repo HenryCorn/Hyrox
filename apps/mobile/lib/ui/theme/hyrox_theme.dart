@@ -37,11 +37,9 @@ class HyroxTheme {
         primary: yellow,
         secondary: yellow,
         surface: darkGrey,
-        background: black,
         onPrimary: black,
         onSecondary: black,
         onSurface: white,
-        onBackground: white,
       ),
       appBarTheme: const AppBarTheme(
         backgroundColor: black,

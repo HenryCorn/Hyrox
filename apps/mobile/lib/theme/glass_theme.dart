@@ -39,14 +39,14 @@ class GlassTheme {
   }) {
     return BoxDecoration(
       borderRadius: borderRadius ?? BorderRadius.circular(16),
-      color: color?.withOpacity(0.15) ?? Colors.white.withOpacity(0.15),
+      color: color?.withValues(alpha: 0.15) ?? Colors.white.withValues(alpha: 0.15),
       border: Border.all(
-        color: Colors.white.withOpacity(0.2),
+        color: Colors.white.withValues(alpha: 0.2),
         width: 1.5,
       ),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.1),
+          color: Colors.black.withValues(alpha: 0.1),
           blurRadius: 10,
           spreadRadius: -5,
         ),

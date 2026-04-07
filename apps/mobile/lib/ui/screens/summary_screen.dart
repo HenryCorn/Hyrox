@@ -1,392 +1,175 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../models/exercise.dart';
+import '../../models/predefined_routines.dart';
 import '../../providers/timer_provider.dart';
-import '../theme/hyrox_theme.dart';
-import '../../utils/exercise_icons.dart';
+import '../../providers/health_provider.dart';
+import '../../providers/target_provider.dart';
+import '../theme/nothing_theme.dart';
+import '../widgets/segmented_progress.dart';
+import '../widgets/pace_indicator.dart';
 
 class SummaryScreen extends ConsumerWidget {
   const SummaryScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final timerState = ref.watch(timerProvider);
-    final routine = timerState.activeRoutine;
+    final timer = ref.watch(timerProvider);
+    final health = ref.watch(healthProvider);
+    final target = ref.watch(targetProvider);
+    final routine = timer.activeRoutine;
 
     if (routine == null) {
-      return const Scaffold(body: Center(child: Text('No workout data')));
+      return const Scaffold(
+        backgroundColor: NothingTheme.black,
+        body: Center(
+          child: Text('NO WORKOUT DATA',
+              style: TextStyle(color: NothingTheme.textDisabled)),
+        ),
+      );
     }
 
+    final effectiveGlobal = target.effectiveGlobalTarget(routine);
+
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: NothingTheme.black,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // ── Header ────────────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back, color: HyroxTheme.yellow),
+                    icon: const Icon(Icons.arrow_back_ios,
+                        size: 18, color: NothingTheme.textSecondary),
                     onPressed: () {
                       ref.read(timerProvider.notifier).reset();
-                      Navigator.of(context).popUntil((route) => route.isFirst);
+                      Navigator.of(context)
+                          .popUntil((route) => route.isFirst);
                     },
                   ),
+                  const Spacer(),
                   Text(
-                    'WORKOUT HISTORY',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: HyroxTheme.yellow,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.2,
-                        ),
+                    'WORKOUT COMPLETE',
+                    style: NothingTheme.label(
+                        fontSize: 11, color: NothingTheme.textSecondary),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.more_vert, color: Colors.grey),
-                    onPressed: () {},
-                  ),
+                  const Spacer(),
+                  const SizedBox(width: 40),
                 ],
               ),
-              
-              const SizedBox(height: 20),
-              
-              // Main Summary Card with Yellow Glow
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(24),
-                  gradient: LinearGradient(
-                    colors: [
-                      HyroxTheme.yellow.withOpacity(0.3),
-                      HyroxTheme.yellow.withOpacity(0.1),
+            ),
+
+            const Divider(height: 1, color: NothingTheme.borderSubtle),
+
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ── Routine name ───────────────────────────────────────
+                    Text(
+                      routine.name.toUpperCase(),
+                      style: NothingTheme.label(
+                          fontSize: 11, color: NothingTheme.textDisabled),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // ── Hero total time ─────────────────────────────────────
+                    _HeroTime(elapsed: timer.totalElapsed),
+
+                    // ── Target comparison ────────────────────────────────────
+                    if (effectiveGlobal != null) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Text(
+                            'TARGET  ${_fmtDuration(effectiveGlobal)}',
+                            style: NothingTheme.label(
+                                fontSize: 10, color: NothingTheme.textDisabled),
+                          ),
+                          const SizedBox(width: 12),
+                          PaceDelta(
+                            elapsed: timer.totalElapsed,
+                            target: effectiveGlobal,
+                          ),
+                          const SizedBox(width: 8),
+                          PaceIndicator(
+                            status: computePaceStatus(
+                                timer.totalElapsed, effectiveGlobal),
+                            fontSize: 10,
+                          ),
+                        ],
+                      ),
                     ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: HyroxTheme.yellow.withOpacity(0.3),
-                      blurRadius: 30,
-                      spreadRadius: 0,
+
+                    const SizedBox(height: 32),
+
+                    // ── Stats grid ──────────────────────────────────────────
+                    _StatsGrid(
+                      health: health,
+                      splits: timer.splits,
+                      exercises: routine.exercises,
+                    ),
+
+                    const SizedBox(height: 32),
+
+                    // ── Completed progress ──────────────────────────────────
+                    SegmentedProgress(
+                      totalSegments: routine.exercises.length,
+                      completedSegments: routine.exercises.length,
+                      currentSegment: routine.exercises.length,
+                      height: 5,
+                    ),
+
+                    const SizedBox(height: 32),
+
+                    // ── Splits ──────────────────────────────────────────────
+                    Text(
+                      'SPLITS',
+                      style: NothingTheme.label(
+                          fontSize: 11, color: NothingTheme.textDisabled),
+                    ),
+                    const SizedBox(height: 12),
+
+                    ...List.generate(routine.exercises.length, (i) {
+                      final exercise = routine.exercises[i];
+                      final split = i < timer.splits.length
+                          ? timer.splits[i]
+                          : null;
+                      final isRun =
+                          PredefinedRoutines.isRunSegment(exercise);
+                      final segTarget =
+                          target.targetForExercise(i, routine);
+                      return _SplitRow(
+                        index: i + 1,
+                        name: exercise.name,
+                        split: split,
+                        isRun: isRun,
+                        target: segTarget,
+                      );
+                    }),
+
+                    const SizedBox(height: 32),
+
+                    // ── Action buttons ──────────────────────────────────────
+                    _ActionButton(
+                      label: '[ NEW WORKOUT ]',
+                      primary: true,
+                      onTap: () {
+                        ref.read(timerProvider.notifier).reset();
+                        Navigator.of(context)
+                            .popUntil((route) => route.isFirst);
+                      },
                     ),
                   ],
                 ),
-                padding: const EdgeInsets.all(2),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1A1A1A),
-                    borderRadius: BorderRadius.circular(22),
-                  ),
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Routine name
-                      Text(
-                        routine.name,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.grey.shade600,
-                            ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 12),
-                      
-                      // Big Time Display
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          _formatDuration(timerState.totalElapsed),
-                          style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                                fontSize: 64,
-                                fontWeight: FontWeight.w900,
-                                color: HyroxTheme.yellow,
-                                fontFeatures: [const FontFeature.tabularFigures()],
-                                shadows: [
-                                  Shadow(
-                                    color: HyroxTheme.yellow.withOpacity(0.5),
-                                    blurRadius: 20,
-                                  ),
-                                ],
-                              ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 20),
-                      
-                      // Stat Cards Row
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildStatCard(
-                              context,
-                              'AVG HR',
-                              '-- bpm',
-                              Icons.favorite_border,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildStatCard(
-                              context,
-                              'TOTAL CALS',
-                              '-- kcal',
-                              Icons.local_fire_department_outlined,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
               ),
-              
-              const SizedBox(height: 20),
-              
-              // Segments List Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'SEGMENTS',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey.shade600,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.2,
-                        ),
-                  ),
-                  Icon(
-                    Icons.expand_more,
-                    color: HyroxTheme.yellow,
-                    size: 20,
-                  ),
-                ],
-              ),
-              
-              const SizedBox(height: 12),
-              
-              // Segments List
-              Expanded(
-                child: ListView.separated(
-                  itemCount: routine.exercises.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    final exercise = routine.exercises[index];
-                    final splitTime = index < timerState.splits.length 
-                        ? timerState.splits[index] 
-                        : null;
-                    
-                    return Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1A1A1A),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.grey.shade900,
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          // Exercise icon with gradient
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  HyroxTheme.yellow.withOpacity(0.3),
-                                  HyroxTheme.yellow.withOpacity(0.1),
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Icon(
-                              ExerciseIcons.getIconForExercise(exercise),
-                              color: HyroxTheme.yellow,
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          
-                          // Number indicator
-                          Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: Colors.black,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: HyroxTheme.yellow.withOpacity(0.3),
-                                width: 1.5,
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                '${index + 1}',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: HyroxTheme.yellow,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 10,
-                                    ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          
-                          // Exercise name
-                          Expanded(
-                            child: Text(
-                              exercise.name,
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Colors.white,
-                                  ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                          ),
-                          
-                          // Split time
-                          if (splitTime != null)
-                            Text(
-                              _formatDuration(splitTime),
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: HyroxTheme.yellow,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-              
-              const SizedBox(height: 20),
-              
-              // Bottom buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildBottomButton(
-                      context,
-                      'History',
-                      Icons.history,
-                      isYellow: true,
-                      onTap: () {
-                        ref.read(timerProvider.notifier).reset();
-                        Navigator.of(context).popUntil((route) => route.isFirst);
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildBottomButton(
-                      context,
-                      'Dashboard',
-                     Icons.dashboard_outlined,
-                      isYellow: false,
-                      onTap: () {
-                        ref.read(timerProvider.notifier).reset();
-                        Navigator.of(context).popUntil((route) => route.isFirst);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatCard(BuildContext context, String label, String value, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.grey.shade900,
-          width: 1,
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: HyroxTheme.yellow, size: 16),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey.shade600,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.0,
-                    ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              value,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: HyroxTheme.yellow,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomButton(
-    BuildContext context,
-    String text,
-    IconData icon, {
-    required bool isYellow,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: isYellow ? Colors.transparent : const Color(0xFF1A1A1A),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isYellow ? HyroxTheme.yellow : Colors.grey.shade800,
-            width: 1.5,
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              color: isYellow ? HyroxTheme.yellow : Colors.white,
-              size: 18,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              text,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: isYellow ? HyroxTheme.yellow : Colors.white,
-                    letterSpacing: 1.0,
-                  ),
             ),
           ],
         ),
@@ -394,11 +177,299 @@ class SummaryScreen extends ConsumerWidget {
     );
   }
 
-  String _formatDuration(Duration duration) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    final hours = twoDigits(duration.inHours);
-    final minutes = twoDigits(duration.inMinutes.remainder(60));
-    final seconds = twoDigits(duration.inSeconds.remainder(60));
-    return duration.inHours > 0 ? '$hours:$minutes:$seconds' : '$minutes:$seconds';
+  static String _fmtDuration(Duration d) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    if (d.inHours > 0) {
+      return '${two(d.inHours)}:${two(d.inMinutes.remainder(60))}:${two(d.inSeconds.remainder(60))}';
+    }
+    return '${two(d.inMinutes.remainder(60))}:${two(d.inSeconds.remainder(60))}';
+  }
+}
+
+// ── Sub-widgets ──────────────────────────────────────────────────────────────
+class _HeroTime extends StatelessWidget {
+  const _HeroTime({required this.elapsed});
+  final Duration elapsed;
+
+  @override
+  Widget build(BuildContext context) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    final h = elapsed.inHours;
+    final m = elapsed.inMinutes.remainder(60);
+    final s = elapsed.inSeconds.remainder(60);
+    return Text(
+      h > 0
+          ? '${two(h)}:${two(m)}:${two(s)}'
+          : '${two(m)}:${two(s)}',
+      style: GoogleFonts.spaceMono(
+        fontSize: 72,
+        fontWeight: FontWeight.w700,
+        color: NothingTheme.textDisplay,
+        height: 1.0,
+        letterSpacing: -2,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      ),
+    );
+  }
+}
+
+class _StatsGrid extends StatelessWidget {
+  const _StatsGrid({
+    required this.health,
+    required this.splits,
+    required this.exercises,
+  });
+  final HealthMetrics health;
+  final List<Duration> splits;
+  final List<Exercise> exercises;
+
+  @override
+  Widget build(BuildContext context) {
+    final avgHr = health.heartRate;
+
+    // Best 1 km run split
+    Duration? bestRun;
+    for (var i = 0; i < splits.length && i < exercises.length; i++) {
+      if (PredefinedRoutines.isRunSegment(exercises[i])) {
+        final d = splits[i];
+        if (bestRun == null || d < bestRun) bestRun = d;
+      }
+    }
+
+    return Row(
+      children: [
+        _StatCell(
+          label: 'AVG HR',
+          value: avgHr != null ? '$avgHr' : '--',
+          unit: 'BPM',
+        ),
+        const SizedBox(width: 1),
+        _StatCell(
+          label: 'CALORIES',
+          value: health.totalCalories > 0
+              ? health.totalCalories.toStringAsFixed(0)
+              : '--',
+          unit: 'KCAL',
+        ),
+        const SizedBox(width: 1),
+        _StatCell(
+          label: 'BEST RUN',
+          value: bestRun != null ? _fmtSplit(bestRun) : '--:--',
+          unit: 'MIN',
+        ),
+      ],
+    );
+  }
+
+  static String _fmtSplit(Duration d) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${two(d.inMinutes.remainder(60))}:${two(d.inSeconds.remainder(60))}';
+  }
+}
+
+class _StatCell extends StatelessWidget {
+  const _StatCell({
+    required this.label,
+    required this.value,
+    required this.unit,
+  });
+  final String label;
+  final String value;
+  final String unit;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: NothingTheme.surface,
+          border: Border.all(color: NothingTheme.borderSubtle),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style:
+                  NothingTheme.label(fontSize: 9, color: NothingTheme.textDisabled),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              value,
+              style: GoogleFonts.spaceMono(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: NothingTheme.textDisplay,
+                height: 1.0,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              unit,
+              style:
+                  NothingTheme.label(fontSize: 9, color: NothingTheme.textDisabled),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SplitRow extends StatelessWidget {
+  const _SplitRow({
+    required this.index,
+    required this.name,
+    required this.split,
+    required this.isRun,
+    this.target,
+  });
+  final int index;
+  final String name;
+  final Duration? split;
+  final bool isRun;
+  final Duration? target;
+
+  @override
+  Widget build(BuildContext context) {
+    final paceStatus =
+        split != null ? computePaceStatus(split!, target) : PaceStatus.none;
+
+    // Color based on pace status when target is set, otherwise default
+    final Color splitColor;
+    if (paceStatus != PaceStatus.none) {
+      splitColor = switch (paceStatus) {
+        PaceStatus.ahead => NothingTheme.success,
+        PaceStatus.onPace =>
+          isRun ? NothingTheme.accent : NothingTheme.textPrimary,
+        PaceStatus.behind => NothingTheme.accent,
+        PaceStatus.none => NothingTheme.textPrimary,
+      };
+    } else {
+      splitColor = isRun ? NothingTheme.accent : NothingTheme.textPrimary;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: NothingTheme.borderSubtle),
+        ),
+      ),
+      child: Row(
+        children: [
+          // Index
+          SizedBox(
+            width: 28,
+            child: Text(
+              '$index',
+              style: NothingTheme.label(
+                  fontSize: 10, color: NothingTheme.textDisabled),
+            ),
+          ),
+          // Run indicator dot
+          Container(
+            width: 6,
+            height: 6,
+            margin: const EdgeInsets.only(right: 10),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isRun ? NothingTheme.accent : NothingTheme.borderSubtle,
+            ),
+          ),
+          // Name
+          Expanded(
+            child: Text(
+              name,
+              style: NothingTheme.body(
+                  fontSize: 13, color: NothingTheme.textPrimary),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          // Pace indicator symbol (colorblind)
+          if (paceStatus != PaceStatus.none) ...[
+            PaceIndicator(
+              status: paceStatus,
+              fontSize: 9,
+              showLabel: false,
+            ),
+            const SizedBox(width: 6),
+          ],
+          // Split time
+          if (split != null)
+            Text(
+              _fmt(split!),
+              style: GoogleFonts.spaceMono(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: splitColor,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            )
+          else
+            Text(
+              '--:--',
+              style: GoogleFonts.spaceMono(
+                fontSize: 13,
+                color: NothingTheme.textDisabled,
+              ),
+            ),
+          // Delta vs target
+          if (split != null && target != null) ...[
+            const SizedBox(width: 8),
+            SizedBox(
+              width: 52,
+              child: PaceDelta(elapsed: split!, target: target),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  static String _fmt(Duration d) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${two(d.inMinutes.remainder(60))}:${two(d.inSeconds.remainder(60))}';
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  const _ActionButton({
+    required this.label,
+    required this.primary,
+    required this.onTap,
+  });
+  final String label;
+  final bool primary;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        decoration: BoxDecoration(
+          color: primary ? NothingTheme.textDisplay : Colors.transparent,
+          borderRadius: BorderRadius.circular(100),
+          border: primary
+              ? null
+              : Border.all(color: NothingTheme.borderVisible),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: GoogleFonts.spaceMono(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: primary ? NothingTheme.black : NothingTheme.textPrimary,
+              letterSpacing: 1.2,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

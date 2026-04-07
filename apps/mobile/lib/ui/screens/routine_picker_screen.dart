@@ -1,220 +1,246 @@
 import 'package:flutter/material.dart';
-import '../../models/predefined_routines.dart';
-import '../theme/hyrox_theme.dart';
-import 'active_workout_screen.dart';
-import '../../providers/timer_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../models/predefined_routines.dart';
+import '../../models/routine.dart';
+import '../../providers/health_provider.dart';
+import '../theme/nothing_theme.dart';
+import 'target_setup_screen.dart';
 
-class RoutinePickerScreen extends ConsumerWidget {
+class RoutinePickerScreen extends ConsumerStatefulWidget {
   const RoutinePickerScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final routines = [
-      ('Women Single - Full Hyrox Race', PredefinedRoutines.womenSingle, Icons.female),
-      ('Men Single - Full Hyrox Race', PredefinedRoutines.menSingle, Icons.male),
-      ('Women Pro - Full Hyrox Race', PredefinedRoutines.womenPro, Icons.emoji_events),
-      ('Men Pro - Full Hyrox Race', PredefinedRoutines.menPro, Icons.workspace_premium),
-      ('Doubles Women - Full Hyrox Race', PredefinedRoutines.doublesWomen, Icons.people),
-      ('Doubles Men - Full Hyrox Race', PredefinedRoutines.doublesMen, Icons.people),
-      ('Doubles Mixed - Full Hyrox Race', PredefinedRoutines.doublesMixed, Icons.people_outline),
-    ];
+  ConsumerState<RoutinePickerScreen> createState() =>
+      _RoutinePickerScreenState();
+}
+
+class _RoutinePickerScreenState extends ConsumerState<RoutinePickerScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Request health permissions on first launch — non-blocking.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(healthProvider.notifier).initialise();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final categories = _categories();
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: NothingTheme.black,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 20),
-              // Icon header
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [
-                      HyroxTheme.yellow.withOpacity(0.2),
-                      HyroxTheme.yellow.withOpacity(0.05),
-                    ],
-                  ),
-                ),
-                child: Icon(
-                  Icons.fitness_center,
-                  size: 48,
-                  color: HyroxTheme.yellow,
-                ),
-              ),
-              const SizedBox(height: 24),
-              // Title
-              Text(
-                'SELECT WORKOUT',
-                style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w900,
-                      color: HyroxTheme.yellow,
-                      letterSpacing: 2.0,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // ── Header ──────────────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 32, 24, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.timer_outlined,
-                    size: 16,
-                    color: Colors.grey.shade600,
-                  ),
-                  const SizedBox(width: 6),
                   Text(
-                    'Choose your Hyrox routine',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey.shade600,
-                        ),
-                    textAlign: TextAlign.center,
+                    'HYROX',
+                    style: GoogleFonts.spaceMono(
+                      fontSize: 48,
+                      fontWeight: FontWeight.w700,
+                      color: NothingTheme.textDisplay,
+                      letterSpacing: -1,
+                      height: 1.0,
+                    ),
                   ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'SELECT CATEGORY',
+                    style: NothingTheme.label(
+                        fontSize: 11, color: NothingTheme.textDisabled),
+                  ),
+                  const SizedBox(height: 24),
+                  // ── Race format info ────────────────────────────────────
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: NothingTheme.surface,
+                      border: Border.all(color: NothingTheme.borderSubtle),
+                    ),
+                    child: Row(
+                      children: [
+                        _infoChip('8 KM TOTAL'),
+                        const SizedBox(width: 16),
+                        _infoChip('8 RUNS'),
+                        const SizedBox(width: 16),
+                        _infoChip('8 STATIONS'),
+                        const Spacer(),
+                        _infoChip('16 SEGMENTS'),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
                 ],
               ),
-              const SizedBox(height: 40),
-              
-              // Routine List
-              Expanded(
-                child: ListView.separated(
-                  itemCount: routines.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 16),
-                  itemBuilder: (context, index) {
-                    final routine = routines[index];
-                    return _buildRoutineCard(
-                      context,
-                      ref,
-                      routine.$1,
-                      routine.$2,
-                      routine.$3,
-                      routine.$2.exercises.length,
-                    );
-                  },
-                ),
+            ),
+
+            // ── Divider ──────────────────────────────────────────────────
+            const Divider(height: 1, color: NothingTheme.borderSubtle),
+
+            // ── Category list ────────────────────────────────────────────
+            Expanded(
+              child: ListView.separated(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                itemCount: categories.length,
+                separatorBuilder: (_, __) =>
+                    const Divider(height: 1, color: NothingTheme.borderSubtle),
+                itemBuilder: (context, index) {
+                  final cat = categories[index];
+                  return _CategoryRow(
+                    label: cat.$1,
+                    sublabel: cat.$2,
+                    routine: cat.$3,
+                    onTap: () => _startRoutine(context, cat.$3),
+                  );
+                },
               ),
-            ],
-          ),
+            ),
+
+            // ── Footer ───────────────────────────────────────────────────
+            const Divider(height: 1, color: NothingTheme.borderSubtle),
+            Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              child: Text(
+                'RACE FORMAT · 8 × 1 KM RUNS + 8 WORKOUT STATIONS',
+                style: NothingTheme.label(
+                    fontSize: 10, color: NothingTheme.textDisabled),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildRoutineCard(
-    BuildContext context,
-    WidgetRef ref,
-    String name,
-    dynamic routine,
-    IconData icon,
-    int segmentCount,
-  ) {
-    return InkWell(
-      onTap: () {
-        ref.read(timerProvider.notifier).startRoutine(routine);
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => const ActiveWorkoutScreen()),
-        );
-      },
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: Colors.grey.shade800,
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
+  Widget _infoChip(String text) => Text(
+        text,
+        style: NothingTheme.label(
+            fontSize: 10, color: NothingTheme.textSecondary),
+      );
+
+  void _startRoutine(BuildContext context, Routine routine) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+          builder: (_) => TargetSetupScreen(routine: routine)),
+    );
+  }
+
+  List<(String, String, Routine)> _categories() => [
+        (
+          'WOMEN OPEN',
+          'SkiErg · Sled 102 kg · Wall Balls 4 kg / 75 reps',
+          PredefinedRoutines.womenSingle,
         ),
+        (
+          'WOMEN PRO',
+          'SkiErg · Sled 102 kg · Wall Balls 4 kg / 100 reps',
+          PredefinedRoutines.womenPro,
+        ),
+        (
+          'MEN OPEN',
+          'SkiErg · Sled 152 kg · Wall Balls 6 kg / 100 reps',
+          PredefinedRoutines.menSingle,
+        ),
+        (
+          'MEN PRO',
+          'SkiErg · Sled 202 kg · Wall Balls 6 kg / 150 reps',
+          PredefinedRoutines.menPro,
+        ),
+        (
+          'DOUBLES WOMEN',
+          '2 × SkiErg 1,000 m · Sled 102 kg · Wall Balls 4 kg',
+          PredefinedRoutines.doublesWomen,
+        ),
+        (
+          'DOUBLES MEN',
+          '2 × SkiErg 1,000 m · Sled 152 kg · Wall Balls 6 kg',
+          PredefinedRoutines.doublesMen,
+        ),
+        (
+          'DOUBLES MIXED',
+          '2 × SkiErg 1,000 m · Sled 152/78 kg · Mixed balls',
+          PredefinedRoutines.doublesMixed,
+        ),
+      ];
+}
+
+// ── Category row widget ─────────────────────────────────────────────────────
+class _CategoryRow extends StatelessWidget {
+  const _CategoryRow({
+    required this.label,
+    required this.sublabel,
+    required this.routine,
+    required this.onTap,
+  });
+
+  final String label;
+  final String sublabel;
+  final Routine routine;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 18),
         child: Row(
           children: [
-            // Icon with gradient background
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    HyroxTheme.yellow.withOpacity(0.3),
-                    HyroxTheme.yellow.withOpacity(0.1),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: HyroxTheme.yellow.withOpacity(0.2),
-                    blurRadius: 12,
-                    spreadRadius: 0,
-                  ),
-                ],
-              ),
-              child: Icon(
-                icon,
-                color: HyroxTheme.yellow,
-                size: 28,
-              ),
-            ),
-            const SizedBox(width: 16),
-            
-            // Text
+            // Content
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    name,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    label,
+                    style: NothingTheme.body(
+                      fontSize: 15,
+                      weight: FontWeight.w600,
+                      color: NothingTheme.textDisplay,
+                    ),
                   ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.format_list_numbered,
-                        size: 14,
-                        color: HyroxTheme.yellow.withOpacity(0.7),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '$segmentCount segments',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey.shade600,
-                            ),
-                      ),
-                    ],
+                  const SizedBox(height: 4),
+                  Text(
+                    sublabel,
+                    style: NothingTheme.label(
+                        fontSize: 10, color: NothingTheme.textDisabled),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
-            
-            // Arrow with background
+            const SizedBox(width: 16),
+            // Segment count badge
             Container(
-              padding: const EdgeInsets.all(8),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: Colors.grey.shade900,
-                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: NothingTheme.borderVisible),
               ),
-              child: Icon(
-                Icons.arrow_forward_ios,
-                color: HyroxTheme.yellow,
-                size: 16,
+              child: Text(
+                '${routine.exercises.length} SEG',
+                style: NothingTheme.label(
+                    fontSize: 10, color: NothingTheme.textSecondary),
               ),
+            ),
+            const SizedBox(width: 12),
+            Icon(
+              Icons.chevron_right,
+              size: 18,
+              color: NothingTheme.textDisabled,
             ),
           ],
         ),

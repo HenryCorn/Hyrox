@@ -1,9 +1,13 @@
+using System.Text;
 using Hyrox.Api.Data;
+using Hyrox.Api.Services.Auth;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using Serilog;
 using Serilog.Events;
 
-// Configure Serilog before building the application
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
@@ -18,87 +22,112 @@ try
     Log.Information("Starting Hyrox API");
 
     var builder = WebApplication.CreateBuilder(args);
-
-    // Replace default logging with Serilog
     builder.Host.UseSerilog();
-
-    // Add Aspire service defaults (OpenTelemetry, health checks, service discovery, resilience)
     builder.AddServiceDefaults();
 
-    // Add services
+    // ── Controllers ──────────────────────────────────────────────────────────
+    builder.Services.AddControllers();
+
+    // ── OpenAPI / Swagger ────────────────────────────────────────────────────
     builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen();
-    builder.Services.AddOpenApi();
+    builder.Services.AddSwaggerGen(c =>
+    {
+        c.SwaggerDoc("v1", new OpenApiInfo { Title = "Hyrox API", Version = "v1" });
+        c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+        {
+            Name = "Authorization",
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            In = ParameterLocation.Header,
+        });
+        c.AddSecurityRequirement(new OpenApiSecurityRequirement
+        {
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+                },
+                []
+            }
+        });
+    });
 
-    // Add correlation ID support
-    builder.Services.AddHttpContextAccessor();
-
-    // Add PostgreSQL with Aspire (this will automatically pick up the connection string from Aspire)
+    // ── Database ─────────────────────────────────────────────────────────────
     builder.AddNpgsqlDbContext<AppDbContext>("hyroxdb");
+
+    // ── JWT Authentication ────────────────────────────────────────────────────
+    var jwtKey = builder.Configuration["Jwt:Key"]
+        ?? throw new InvalidOperationException("Jwt:Key is not configured.");
+
+    builder.Services
+        .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+                ValidateIssuer = true,
+                ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                ValidateAudience = true,
+                ValidAudience = builder.Configuration["Jwt:Audience"],
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.FromMinutes(1),
+            };
+        });
+
+    builder.Services.AddAuthorization();
+
+    // ── Auth Services ─────────────────────────────────────────────────────────
+    builder.Services.AddSingleton<IJwtService, JwtService>();
+    builder.Services.AddSingleton<AppleTokenValidator>();
+    builder.Services.AddSingleton<GoogleTokenValidator>();
+    builder.Services.AddHttpContextAccessor();
 
     var app = builder.Build();
 
-    // Configure Swagger/OpenAPI middleware
+    // ── Auto-migrate on startup ───────────────────────────────────────────────
+    using (var scope = app.Services.CreateScope())
+    {
+        var dbCtx = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await dbCtx.Database.MigrateAsync();
+    }
+
+    // ── Middleware pipeline ───────────────────────────────────────────────────
     if (app.Environment.IsDevelopment())
     {
         app.UseSwagger();
         app.UseSwaggerUI();
     }
 
-    // Map default Aspire endpoints (/health, /alive)
     app.MapDefaultEndpoints();
 
-    // Add correlation ID middleware
     app.Use(async (context, next) =>
     {
-        var correlationId = context.Request.Headers["X-Correlation-ID"].FirstOrDefault() 
+        var correlationId = context.Request.Headers["X-Correlation-ID"].FirstOrDefault()
                             ?? Guid.NewGuid().ToString();
         context.Response.Headers.Append("X-Correlation-ID", correlationId);
-        
         using (Serilog.Context.LogContext.PushProperty("CorrelationId", correlationId))
         {
             await next();
         }
     });
 
-    // Enable Serilog request logging with custom enrichment
     app.UseSerilogRequestLogging(options =>
     {
-        options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
-        {
-            diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value ?? "unknown");
-            diagnosticContext.Set("RequestScheme", httpContext.Request.Scheme);
-            diagnosticContext.Set("RemoteIpAddress", httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
-            diagnosticContext.Set("UserAgent", httpContext.Request.Headers["User-Agent"].ToString());
-            
-            var correlationId = httpContext.Response.Headers["X-Correlation-ID"].FirstOrDefault();
-            if (!string.IsNullOrEmpty(correlationId))
-            {
-                diagnosticContext.Set("CorrelationId", correlationId);
-            }
-        };
-        
-        // Customize the message template
         options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+        options.EnrichDiagnosticContext = (diag, http) =>
+        {
+            diag.Set("RequestHost", http.Request.Host.Value ?? "unknown");
+            diag.Set("UserAgent", http.Request.Headers["User-Agent"].ToString());
+        };
     });
 
+    app.UseAuthentication();
+    app.UseAuthorization();
 
-    var summaries = new[]
-    {
-        "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-    };
-
-    app.MapGet("/weatherforecast", () =>
-    {
-        var forecast = Enumerable.Range(1, 5).Select(index =>
-            new WeatherForecast(
-                DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                Random.Shared.Next(-20, 55),
-                summaries[Random.Shared.Next(summaries.Length)]
-            )
-        ).ToArray();
-        return forecast;
-    });
+    app.MapControllers();
 
     app.Run();
 }
@@ -109,9 +138,4 @@ catch (Exception ex)
 finally
 {
     Log.CloseAndFlush();
-}
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
 }

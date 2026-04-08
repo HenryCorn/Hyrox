@@ -15,6 +15,7 @@ T _$identity<T>(T value) => value;
 mixin _$TimerState {
 
  TimerStatus get status; Duration get totalElapsed; int get currentExerciseIndex; Duration get currentExerciseElapsed; List<Duration> get splits;// Time for each completed exercise
+ List<Duration> get roxZoneSplits;// Time for each Rox Zone transition
  bool get isInRoxZone;// Whether currently in transition zone
  Routine? get activeRoutine; DateTime? get startTime; DateTime? get lastTickTime;
 /// Create a copy of TimerState
@@ -27,16 +28,16 @@ $TimerStateCopyWith<TimerState> get copyWith => _$TimerStateCopyWithImpl<TimerSt
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is TimerState&&(identical(other.status, status) || other.status == status)&&(identical(other.totalElapsed, totalElapsed) || other.totalElapsed == totalElapsed)&&(identical(other.currentExerciseIndex, currentExerciseIndex) || other.currentExerciseIndex == currentExerciseIndex)&&(identical(other.currentExerciseElapsed, currentExerciseElapsed) || other.currentExerciseElapsed == currentExerciseElapsed)&&const DeepCollectionEquality().equals(other.splits, splits)&&(identical(other.isInRoxZone, isInRoxZone) || other.isInRoxZone == isInRoxZone)&&(identical(other.activeRoutine, activeRoutine) || other.activeRoutine == activeRoutine)&&(identical(other.startTime, startTime) || other.startTime == startTime)&&(identical(other.lastTickTime, lastTickTime) || other.lastTickTime == lastTickTime));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TimerState&&(identical(other.status, status) || other.status == status)&&(identical(other.totalElapsed, totalElapsed) || other.totalElapsed == totalElapsed)&&(identical(other.currentExerciseIndex, currentExerciseIndex) || other.currentExerciseIndex == currentExerciseIndex)&&(identical(other.currentExerciseElapsed, currentExerciseElapsed) || other.currentExerciseElapsed == currentExerciseElapsed)&&const DeepCollectionEquality().equals(other.splits, splits)&&const DeepCollectionEquality().equals(other.roxZoneSplits, roxZoneSplits)&&(identical(other.isInRoxZone, isInRoxZone) || other.isInRoxZone == isInRoxZone)&&(identical(other.activeRoutine, activeRoutine) || other.activeRoutine == activeRoutine)&&(identical(other.startTime, startTime) || other.startTime == startTime)&&(identical(other.lastTickTime, lastTickTime) || other.lastTickTime == lastTickTime));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,totalElapsed,currentExerciseIndex,currentExerciseElapsed,const DeepCollectionEquality().hash(splits),isInRoxZone,activeRoutine,startTime,lastTickTime);
+int get hashCode => Object.hash(runtimeType,status,totalElapsed,currentExerciseIndex,currentExerciseElapsed,const DeepCollectionEquality().hash(splits),const DeepCollectionEquality().hash(roxZoneSplits),isInRoxZone,activeRoutine,startTime,lastTickTime);
 
 @override
 String toString() {
-  return 'TimerState(status: $status, totalElapsed: $totalElapsed, currentExerciseIndex: $currentExerciseIndex, currentExerciseElapsed: $currentExerciseElapsed, splits: $splits, isInRoxZone: $isInRoxZone, activeRoutine: $activeRoutine, startTime: $startTime, lastTickTime: $lastTickTime)';
+  return 'TimerState(status: $status, totalElapsed: $totalElapsed, currentExerciseIndex: $currentExerciseIndex, currentExerciseElapsed: $currentExerciseElapsed, splits: $splits, roxZoneSplits: $roxZoneSplits, isInRoxZone: $isInRoxZone, activeRoutine: $activeRoutine, startTime: $startTime, lastTickTime: $lastTickTime)';
 }
 
 
@@ -47,7 +48,7 @@ abstract mixin class $TimerStateCopyWith<$Res>  {
   factory $TimerStateCopyWith(TimerState value, $Res Function(TimerState) _then) = _$TimerStateCopyWithImpl;
 @useResult
 $Res call({
- TimerStatus status, Duration totalElapsed, int currentExerciseIndex, Duration currentExerciseElapsed, List<Duration> splits, bool isInRoxZone, Routine? activeRoutine, DateTime? startTime, DateTime? lastTickTime
+ TimerStatus status, Duration totalElapsed, int currentExerciseIndex, Duration currentExerciseElapsed, List<Duration> splits, List<Duration> roxZoneSplits, bool isInRoxZone, Routine? activeRoutine, DateTime? startTime, DateTime? lastTickTime
 });
 
 
@@ -64,13 +65,14 @@ class _$TimerStateCopyWithImpl<$Res>
 
 /// Create a copy of TimerState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? totalElapsed = null,Object? currentExerciseIndex = null,Object? currentExerciseElapsed = null,Object? splits = null,Object? isInRoxZone = null,Object? activeRoutine = freezed,Object? startTime = freezed,Object? lastTickTime = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? totalElapsed = null,Object? currentExerciseIndex = null,Object? currentExerciseElapsed = null,Object? splits = null,Object? roxZoneSplits = null,Object? isInRoxZone = null,Object? activeRoutine = freezed,Object? startTime = freezed,Object? lastTickTime = freezed,}) {
   return _then(_self.copyWith(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as TimerStatus,totalElapsed: null == totalElapsed ? _self.totalElapsed : totalElapsed // ignore: cast_nullable_to_non_nullable
 as Duration,currentExerciseIndex: null == currentExerciseIndex ? _self.currentExerciseIndex : currentExerciseIndex // ignore: cast_nullable_to_non_nullable
 as int,currentExerciseElapsed: null == currentExerciseElapsed ? _self.currentExerciseElapsed : currentExerciseElapsed // ignore: cast_nullable_to_non_nullable
 as Duration,splits: null == splits ? _self.splits : splits // ignore: cast_nullable_to_non_nullable
+as List<Duration>,roxZoneSplits: null == roxZoneSplits ? _self.roxZoneSplits : roxZoneSplits // ignore: cast_nullable_to_non_nullable
 as List<Duration>,isInRoxZone: null == isInRoxZone ? _self.isInRoxZone : isInRoxZone // ignore: cast_nullable_to_non_nullable
 as bool,activeRoutine: freezed == activeRoutine ? _self.activeRoutine : activeRoutine // ignore: cast_nullable_to_non_nullable
 as Routine?,startTime: freezed == startTime ? _self.startTime : startTime // ignore: cast_nullable_to_non_nullable
@@ -172,10 +174,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( TimerStatus status,  Duration totalElapsed,  int currentExerciseIndex,  Duration currentExerciseElapsed,  List<Duration> splits,  bool isInRoxZone,  Routine? activeRoutine,  DateTime? startTime,  DateTime? lastTickTime)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( TimerStatus status,  Duration totalElapsed,  int currentExerciseIndex,  Duration currentExerciseElapsed,  List<Duration> splits,  List<Duration> roxZoneSplits,  bool isInRoxZone,  Routine? activeRoutine,  DateTime? startTime,  DateTime? lastTickTime)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _TimerState() when $default != null:
-return $default(_that.status,_that.totalElapsed,_that.currentExerciseIndex,_that.currentExerciseElapsed,_that.splits,_that.isInRoxZone,_that.activeRoutine,_that.startTime,_that.lastTickTime);case _:
+return $default(_that.status,_that.totalElapsed,_that.currentExerciseIndex,_that.currentExerciseElapsed,_that.splits,_that.roxZoneSplits,_that.isInRoxZone,_that.activeRoutine,_that.startTime,_that.lastTickTime);case _:
   return orElse();
 
 }
@@ -193,10 +195,10 @@ return $default(_that.status,_that.totalElapsed,_that.currentExerciseIndex,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( TimerStatus status,  Duration totalElapsed,  int currentExerciseIndex,  Duration currentExerciseElapsed,  List<Duration> splits,  bool isInRoxZone,  Routine? activeRoutine,  DateTime? startTime,  DateTime? lastTickTime)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( TimerStatus status,  Duration totalElapsed,  int currentExerciseIndex,  Duration currentExerciseElapsed,  List<Duration> splits,  List<Duration> roxZoneSplits,  bool isInRoxZone,  Routine? activeRoutine,  DateTime? startTime,  DateTime? lastTickTime)  $default,) {final _that = this;
 switch (_that) {
 case _TimerState():
-return $default(_that.status,_that.totalElapsed,_that.currentExerciseIndex,_that.currentExerciseElapsed,_that.splits,_that.isInRoxZone,_that.activeRoutine,_that.startTime,_that.lastTickTime);case _:
+return $default(_that.status,_that.totalElapsed,_that.currentExerciseIndex,_that.currentExerciseElapsed,_that.splits,_that.roxZoneSplits,_that.isInRoxZone,_that.activeRoutine,_that.startTime,_that.lastTickTime);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -213,10 +215,10 @@ return $default(_that.status,_that.totalElapsed,_that.currentExerciseIndex,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( TimerStatus status,  Duration totalElapsed,  int currentExerciseIndex,  Duration currentExerciseElapsed,  List<Duration> splits,  bool isInRoxZone,  Routine? activeRoutine,  DateTime? startTime,  DateTime? lastTickTime)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( TimerStatus status,  Duration totalElapsed,  int currentExerciseIndex,  Duration currentExerciseElapsed,  List<Duration> splits,  List<Duration> roxZoneSplits,  bool isInRoxZone,  Routine? activeRoutine,  DateTime? startTime,  DateTime? lastTickTime)?  $default,) {final _that = this;
 switch (_that) {
 case _TimerState() when $default != null:
-return $default(_that.status,_that.totalElapsed,_that.currentExerciseIndex,_that.currentExerciseElapsed,_that.splits,_that.isInRoxZone,_that.activeRoutine,_that.startTime,_that.lastTickTime);case _:
+return $default(_that.status,_that.totalElapsed,_that.currentExerciseIndex,_that.currentExerciseElapsed,_that.splits,_that.roxZoneSplits,_that.isInRoxZone,_that.activeRoutine,_that.startTime,_that.lastTickTime);case _:
   return null;
 
 }
@@ -228,7 +230,7 @@ return $default(_that.status,_that.totalElapsed,_that.currentExerciseIndex,_that
 
 
 class _TimerState implements TimerState {
-  const _TimerState({required this.status, required this.totalElapsed, required this.currentExerciseIndex, required this.currentExerciseElapsed, required final  List<Duration> splits, required this.isInRoxZone, this.activeRoutine, this.startTime, this.lastTickTime}): _splits = splits;
+  const _TimerState({required this.status, required this.totalElapsed, required this.currentExerciseIndex, required this.currentExerciseElapsed, required final  List<Duration> splits, required final  List<Duration> roxZoneSplits, required this.isInRoxZone, this.activeRoutine, this.startTime, this.lastTickTime}): _splits = splits,_roxZoneSplits = roxZoneSplits;
   
 
 @override final  TimerStatus status;
@@ -243,6 +245,15 @@ class _TimerState implements TimerState {
 }
 
 // Time for each completed exercise
+ final  List<Duration> _roxZoneSplits;
+// Time for each completed exercise
+@override List<Duration> get roxZoneSplits {
+  if (_roxZoneSplits is EqualUnmodifiableListView) return _roxZoneSplits;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_roxZoneSplits);
+}
+
+// Time for each Rox Zone transition
 @override final  bool isInRoxZone;
 // Whether currently in transition zone
 @override final  Routine? activeRoutine;
@@ -259,16 +270,16 @@ _$TimerStateCopyWith<_TimerState> get copyWith => __$TimerStateCopyWithImpl<_Tim
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TimerState&&(identical(other.status, status) || other.status == status)&&(identical(other.totalElapsed, totalElapsed) || other.totalElapsed == totalElapsed)&&(identical(other.currentExerciseIndex, currentExerciseIndex) || other.currentExerciseIndex == currentExerciseIndex)&&(identical(other.currentExerciseElapsed, currentExerciseElapsed) || other.currentExerciseElapsed == currentExerciseElapsed)&&const DeepCollectionEquality().equals(other._splits, _splits)&&(identical(other.isInRoxZone, isInRoxZone) || other.isInRoxZone == isInRoxZone)&&(identical(other.activeRoutine, activeRoutine) || other.activeRoutine == activeRoutine)&&(identical(other.startTime, startTime) || other.startTime == startTime)&&(identical(other.lastTickTime, lastTickTime) || other.lastTickTime == lastTickTime));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TimerState&&(identical(other.status, status) || other.status == status)&&(identical(other.totalElapsed, totalElapsed) || other.totalElapsed == totalElapsed)&&(identical(other.currentExerciseIndex, currentExerciseIndex) || other.currentExerciseIndex == currentExerciseIndex)&&(identical(other.currentExerciseElapsed, currentExerciseElapsed) || other.currentExerciseElapsed == currentExerciseElapsed)&&const DeepCollectionEquality().equals(other._splits, _splits)&&const DeepCollectionEquality().equals(other._roxZoneSplits, _roxZoneSplits)&&(identical(other.isInRoxZone, isInRoxZone) || other.isInRoxZone == isInRoxZone)&&(identical(other.activeRoutine, activeRoutine) || other.activeRoutine == activeRoutine)&&(identical(other.startTime, startTime) || other.startTime == startTime)&&(identical(other.lastTickTime, lastTickTime) || other.lastTickTime == lastTickTime));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,totalElapsed,currentExerciseIndex,currentExerciseElapsed,const DeepCollectionEquality().hash(_splits),isInRoxZone,activeRoutine,startTime,lastTickTime);
+int get hashCode => Object.hash(runtimeType,status,totalElapsed,currentExerciseIndex,currentExerciseElapsed,const DeepCollectionEquality().hash(_splits),const DeepCollectionEquality().hash(_roxZoneSplits),isInRoxZone,activeRoutine,startTime,lastTickTime);
 
 @override
 String toString() {
-  return 'TimerState(status: $status, totalElapsed: $totalElapsed, currentExerciseIndex: $currentExerciseIndex, currentExerciseElapsed: $currentExerciseElapsed, splits: $splits, isInRoxZone: $isInRoxZone, activeRoutine: $activeRoutine, startTime: $startTime, lastTickTime: $lastTickTime)';
+  return 'TimerState(status: $status, totalElapsed: $totalElapsed, currentExerciseIndex: $currentExerciseIndex, currentExerciseElapsed: $currentExerciseElapsed, splits: $splits, roxZoneSplits: $roxZoneSplits, isInRoxZone: $isInRoxZone, activeRoutine: $activeRoutine, startTime: $startTime, lastTickTime: $lastTickTime)';
 }
 
 
@@ -279,7 +290,7 @@ abstract mixin class _$TimerStateCopyWith<$Res> implements $TimerStateCopyWith<$
   factory _$TimerStateCopyWith(_TimerState value, $Res Function(_TimerState) _then) = __$TimerStateCopyWithImpl;
 @override @useResult
 $Res call({
- TimerStatus status, Duration totalElapsed, int currentExerciseIndex, Duration currentExerciseElapsed, List<Duration> splits, bool isInRoxZone, Routine? activeRoutine, DateTime? startTime, DateTime? lastTickTime
+ TimerStatus status, Duration totalElapsed, int currentExerciseIndex, Duration currentExerciseElapsed, List<Duration> splits, List<Duration> roxZoneSplits, bool isInRoxZone, Routine? activeRoutine, DateTime? startTime, DateTime? lastTickTime
 });
 
 
@@ -296,13 +307,14 @@ class __$TimerStateCopyWithImpl<$Res>
 
 /// Create a copy of TimerState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? totalElapsed = null,Object? currentExerciseIndex = null,Object? currentExerciseElapsed = null,Object? splits = null,Object? isInRoxZone = null,Object? activeRoutine = freezed,Object? startTime = freezed,Object? lastTickTime = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? totalElapsed = null,Object? currentExerciseIndex = null,Object? currentExerciseElapsed = null,Object? splits = null,Object? roxZoneSplits = null,Object? isInRoxZone = null,Object? activeRoutine = freezed,Object? startTime = freezed,Object? lastTickTime = freezed,}) {
   return _then(_TimerState(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as TimerStatus,totalElapsed: null == totalElapsed ? _self.totalElapsed : totalElapsed // ignore: cast_nullable_to_non_nullable
 as Duration,currentExerciseIndex: null == currentExerciseIndex ? _self.currentExerciseIndex : currentExerciseIndex // ignore: cast_nullable_to_non_nullable
 as int,currentExerciseElapsed: null == currentExerciseElapsed ? _self.currentExerciseElapsed : currentExerciseElapsed // ignore: cast_nullable_to_non_nullable
 as Duration,splits: null == splits ? _self._splits : splits // ignore: cast_nullable_to_non_nullable
+as List<Duration>,roxZoneSplits: null == roxZoneSplits ? _self._roxZoneSplits : roxZoneSplits // ignore: cast_nullable_to_non_nullable
 as List<Duration>,isInRoxZone: null == isInRoxZone ? _self.isInRoxZone : isInRoxZone // ignore: cast_nullable_to_non_nullable
 as bool,activeRoutine: freezed == activeRoutine ? _self.activeRoutine : activeRoutine // ignore: cast_nullable_to_non_nullable
 as Routine?,startTime: freezed == startTime ? _self.startTime : startTime // ignore: cast_nullable_to_non_nullable

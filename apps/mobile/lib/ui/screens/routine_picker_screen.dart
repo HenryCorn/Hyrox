@@ -5,6 +5,10 @@ import '../../models/predefined_routines.dart';
 import '../../models/routine.dart';
 import '../../providers/health_provider.dart';
 import '../theme/nothing_theme.dart';
+import '../../providers/auth_provider.dart';
+import 'auth_screen.dart';
+import 'friends_screen.dart';
+import 'history_screen.dart';
 import 'target_setup_screen.dart';
 
 class RoutinePickerScreen extends ConsumerStatefulWidget {
@@ -41,6 +45,36 @@ class _RoutinePickerScreenState extends ConsumerState<RoutinePickerScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Icon row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          final auth = ref.read(authProvider).value;
+                          if (auth is AuthAuthenticated) {
+                            Navigator.of(context).push(MaterialPageRoute(
+                                builder: (_) => const FriendsScreen()));
+                          } else {
+                            Navigator.of(context).push(MaterialPageRoute(
+                                builder: (_) => const AuthScreen()));
+                          }
+                        },
+                        child: const Icon(Icons.people_outline,
+                            size: 22, color: NothingTheme.textSecondary),
+                      ),
+                      const SizedBox(width: 16),
+                      GestureDetector(
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                              builder: (_) => const HistoryScreen()),
+                        ),
+                        child: const Icon(Icons.history,
+                            size: 22, color: NothingTheme.textSecondary),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
                   Text(
                     'HYROX',
                     style: GoogleFonts.spaceMono(

@@ -44,6 +44,18 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 
+	<!-- ── Google Mobile Ads ────────────────────────────────────────── -->
+	<!-- Replace with your real AdMob App ID before releasing. -->
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-3940256099942544~1458002511</string>
+	<key>SKAdNetworkItems</key>
+	<array>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>cstr6suwn9.skadnetwork</string>
+		</dict>
+	</array>
+
 	<!-- ── HealthKit ────────────────────────────────────────────────── -->
 	<key>NSHealthShareUsageDescription</key>
 	<string>Hyrox reads your heart rate and calories to show live stats during your workout.</string>

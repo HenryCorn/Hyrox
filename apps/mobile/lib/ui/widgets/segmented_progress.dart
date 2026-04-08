@@ -20,8 +20,8 @@ class SegmentedProgress extends StatelessWidget {
   final int completedSegments;
   final int currentSegment;
 
-  /// When true the current-segment block uses [NothingTheme.accent] (red),
-  /// intended for run segments where urgency should be signalled.
+  /// When true the current-segment block uses [NothingTheme.accent] (Hyrox yellow),
+  /// intended for run segments.
   final bool accentCurrent;
   final double height;
 
@@ -42,7 +42,7 @@ class SegmentedProgress extends StatelessWidget {
               color = NothingTheme.borderVisible; // done — dimmed
             } else if (i == currentSegment) {
               color = accentCurrent
-                  ? NothingTheme.accent // run segment — red
+                  ? NothingTheme.accent // run segment — Hyrox yellow
                   : NothingTheme.textDisplay; // station — white
             } else {
               color = NothingTheme.borderSubtle; // future — very dark

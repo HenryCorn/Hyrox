@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hyrox_tracker/main.dart';
+import 'package:hyrox_tracker/providers/auth_provider.dart';
+import 'package:hyrox_tracker/providers/health_provider.dart';
 import 'package:hyrox_tracker/services/wakelock_service.dart';
 import 'package:hyrox_tracker/ui/screens/active_workout_screen.dart';
 import 'package:hyrox_tracker/ui/screens/routine_picker_screen.dart';
 import 'package:hyrox_tracker/ui/screens/target_setup_screen.dart';
-import 'package:hyrox_tracker/providers/health_provider.dart';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────
+
 class MockWakelockService implements WakelockService {
   @override
   Future<void> enable() async {}
@@ -40,11 +42,23 @@ class MockHealthNotifier extends HealthNotifier {
   }) async {}
 }
 
+/// Bypasses FlutterSecureStorage (unavailable in tests) and immediately
+/// returns an authenticated state so _AuthGate shows RoutinePickerScreen.
+class MockAuthNotifier extends AuthNotifier {
+  @override
+  Future<AuthState> build() async => const AuthAuthenticated(
+        userId: 'test-user',
+        displayName: 'Test',
+        accessToken: 'test-token',
+      );
+}
+
 // ── Helper — creates a fresh scoped app for each test ─────────────────────
 Widget makeTestApp() => ProviderScope(
       overrides: [
         wakelockServiceProvider.overrideWithValue(MockWakelockService()),
         healthProvider.overrideWith(MockHealthNotifier.new),
+        authProvider.overrideWith(MockAuthNotifier.new),
       ],
       child: const HyroxApp(),
     );
@@ -71,6 +85,7 @@ void main() {
 
     expect(find.byType(RoutinePickerScreen), findsOneWidget);
 
+    // ListView.separated lazily renders — scroll to surface off-screen items.
     for (final label in [
       'WOMEN OPEN',
       'WOMEN PRO',
@@ -80,7 +95,13 @@ void main() {
       'DOUBLES MEN',
       'DOUBLES MIXED',
     ]) {
-      expect(find.text(label), findsOneWidget, reason: '$label not found');
+      await tester.scrollUntilVisible(
+        find.text(label),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text(label), findsAtLeastNWidgets(1),
+          reason: '$label not found');
     }
   });
 
@@ -103,8 +124,9 @@ void main() {
     await navigateToActiveWorkout(tester);
 
     expect(find.byType(ActiveWorkoutScreen), findsOneWidget);
-    // First exercise: '1 km Run 1' displayed uppercased
-    expect(find.text('1 KM RUN 1'), findsOneWidget);
+    // First exercise name appears in at least the main display and the station
+    // list — use findsAtLeastNWidgets to avoid fragile count assumptions.
+    expect(find.text('1 KM RUN 1'), findsAtLeastNWidgets(1));
   });
 
   testWidgets('START → PAUSE controls work', (tester) async {

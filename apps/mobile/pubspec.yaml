@@ -21,14 +21,29 @@ dependencies:
   # Nothing design typography
   google_fonts: ^6.2.1
 
+  # Workout history persistence
+  sqflite: ^2.3.3
+
+  # Progress charts
+  fl_chart: ^0.70.2
+
   # Health & fitness data (HealthKit on iOS, Health Connect on Android)
-  health: ^12.2.0
+  health: ^13.1.3
 
   # GPS for running pace
-  geolocator: ^13.0.4
+  geolocator: ^14.0.2
 
   # Runtime permissions
-  permission_handler: ^11.3.1
+  permission_handler: ^12.0.1
+
+  # Auth & sync
+  sign_in_with_apple: ^6.1.4
+  google_sign_in: ^6.2.2
+  flutter_secure_storage: ^9.2.4
+  dio: ^5.8.0+1
+
+  # Monetisation
+  google_mobile_ads: ^5.3.0
 
 dev_dependencies:
   flutter_test:

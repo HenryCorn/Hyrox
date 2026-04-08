@@ -137,23 +137,33 @@ class SummaryScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 12),
 
-                    ...List.generate(routine.exercises.length, (i) {
-                      final exercise = routine.exercises[i];
-                      final split = i < timer.splits.length
-                          ? timer.splits[i]
-                          : null;
-                      final isRun =
-                          PredefinedRoutines.isRunSegment(exercise);
-                      final segTarget =
-                          target.targetForExercise(i, routine);
-                      return _SplitRow(
-                        index: i + 1,
-                        name: exercise.name,
-                        split: split,
-                        isRun: isRun,
-                        target: segTarget,
-                      );
-                    }),
+                    // Exercise splits interleaved with Rox Zone times
+                    ...() {
+                      final rows = <Widget>[];
+                      for (var i = 0; i < routine.exercises.length; i++) {
+                        final exercise = routine.exercises[i];
+                        final split = i < timer.splits.length
+                            ? timer.splits[i]
+                            : null;
+                        final isRun =
+                            PredefinedRoutines.isRunSegment(exercise);
+                        rows.add(_SplitRow(
+                          index: i + 1,
+                          name: exercise.name,
+                          split: split,
+                          isRun: isRun,
+                          target: target.targetForExercise(i, routine),
+                        ));
+                        // Rox Zone row after each exercise except the last
+                        if (i < routine.exercises.length - 1 &&
+                            i < timer.roxZoneSplits.length) {
+                          rows.add(_RoxZoneRow(
+                            split: timer.roxZoneSplits[i],
+                          ));
+                        }
+                      }
+                      return rows;
+                    }(),
 
                     const SizedBox(height: 32),
 
@@ -432,6 +442,54 @@ class _SplitRow extends StatelessWidget {
   static String _fmt(Duration d) {
     String two(int n) => n.toString().padLeft(2, '0');
     return '${two(d.inMinutes.remainder(60))}:${two(d.inSeconds.remainder(60))}';
+  }
+}
+
+class _RoxZoneRow extends StatelessWidget {
+  const _RoxZoneRow({required this.split});
+  final Duration split;
+
+  @override
+  Widget build(BuildContext context) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    final time =
+        '${two(split.inMinutes.remainder(60))}:${two(split.inSeconds.remainder(60))}';
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: NothingTheme.borderSubtle)),
+      ),
+      child: Row(
+        children: [
+          const SizedBox(width: 28), // align with exercise rows
+          Container(
+            width: 6,
+            height: 6,
+            margin: const EdgeInsets.only(right: 10),
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: NothingTheme.accent,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              'ROX ZONE',
+              style: NothingTheme.label(
+                  fontSize: 11, color: NothingTheme.accent),
+            ),
+          ),
+          Text(
+            time,
+            style: GoogleFonts.spaceMono(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: NothingTheme.accent,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

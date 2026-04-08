@@ -459,26 +459,22 @@ class _SegmentTargetRow extends StatelessWidget {
           ),
           const SizedBox(height: 10),
 
-          // Target time for this segment
+          // For runs: single PACE /KM field (sets both target and pace).
+          // For stations: TARGET TIME only.
           _DurationField(
-            label: isRun ? 'TARGET TIME (OR SET PACE BELOW)' : 'TARGET TIME',
+            label: isRun
+                ? 'PACE /KM${globalRunPace != null && runPace == null && exerciseTarget == null ? "  (GLOBAL: ${_fmtPace(globalRunPace!)})" : ""}'
+                : 'TARGET TIME',
             hint: 'MM : SS',
-            value: exerciseTarget,
+            value: isRun ? (runPace ?? exerciseTarget) : exerciseTarget,
             showHours: false,
-            onChanged: onExerciseTargetChanged,
+            onChanged: isRun
+                ? (d) {
+                    onExerciseTargetChanged(d);
+                    onRunPaceChanged?.call(d);
+                  }
+                : onExerciseTargetChanged,
           ),
-
-          // Run pace override (only for run segments)
-          if (isRun && onRunPaceChanged != null) ...[
-            const SizedBox(height: 10),
-            _DurationField(
-              label: 'PACE /KM${globalRunPace != null && runPace == null ? "  (USING GLOBAL: ${_fmtPace(globalRunPace!)})" : ""}',
-              hint: 'MM : SS',
-              value: runPace,
-              showHours: false,
-              onChanged: onRunPaceChanged!,
-            ),
-          ],
         ],
       ),
     );

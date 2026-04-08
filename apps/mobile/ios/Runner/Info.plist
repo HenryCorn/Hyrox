@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Hyrox</string>
+	<string>Hype Rox</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -13,7 +13,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>hyrox_tracker</string>
+	<string>hype_rox</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -58,18 +58,18 @@
 
 	<!-- ── HealthKit ────────────────────────────────────────────────── -->
 	<key>NSHealthShareUsageDescription</key>
-	<string>Hyrox reads your heart rate and calories to show live stats during your workout.</string>
+	<string>Hype Rox reads your heart rate and calories to show live stats during your workout.</string>
 	<key>NSHealthUpdateUsageDescription</key>
-	<string>Hyrox saves your workout sessions, heart rate, and calories to Apple Health.</string>
+	<string>Hype Rox saves your workout sessions, heart rate, and calories to Apple Health.</string>
 
 	<!-- ── Location / GPS pace ──────────────────────────────────────── -->
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Hyrox uses your location to calculate running pace during the 1 km run segments.</string>
+	<string>Hype Rox uses your location to calculate running pace during the 1 km run segments.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Hyrox uses your location to track running pace. Background access keeps pace accurate when the screen is off.</string>
+	<string>Hype Rox uses your location to track running pace. Background access keeps pace accurate when the screen is off.</string>
 
 	<!-- ── Motion (step cadence, if needed) ─────────────────────────── -->
 	<key>NSMotionUsageDescription</key>
-	<string>Hyrox may use motion data to count steps and improve pace accuracy.</string>
+	<string>Hype Rox may use motion data to count steps and improve pace accuracy.</string>
 </dict>
 </plist>
